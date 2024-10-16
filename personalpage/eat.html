@@ -177,7 +177,10 @@
         <div id="map"></div>
       </div>
       <div class="col-md-3 col-12 mt-3 mt-md-0">
-        <div id="flagSelection" class="mb-3">
+        <div class="d-md-none">
+          <button id="toggleFlagList" class="btn btn-secondary btn-sm mb-2">展開 FlagList</button>
+        </div>
+        <div id="flagSelection" class="mb-3 collapse d-md-block">
           <div class="flag-list-header">
             <h4 class="text-white">FlagList</h4>
             <div>
@@ -549,6 +552,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     uploadFlagToFirebase(file, e.target.result);
                 }
                 reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    const toggleFlagList = document.getElementById('toggleFlagList');
+    const flagSelection = document.getElementById('flagSelection');
+
+    if (toggleFlagList && flagSelection) {
+        toggleFlagList.addEventListener('click', () => {
+            flagSelection.classList.toggle('show');
+            if (flagSelection.classList.contains('show')) {
+                toggleFlagList.textContent = '收縮 FlagList';
+            } else {
+                toggleFlagList.textContent = '展開 FlagList';
             }
         });
     }
