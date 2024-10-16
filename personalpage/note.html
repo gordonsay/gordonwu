@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GJ | Note</title>
+    <title>GJ | Travel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style_personal.css">
     <link rel="apple-touch-icon" sizes="180x180" href="../icon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="../icon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="../icon/favicon-16x16.png">
     <link rel="manifest" href="../icon/site.webmanifest">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         body {
             background-color: rgba(0, 105, 148, 0.7); /* 海洋藍色，透明度為 0.7 */
@@ -19,41 +20,113 @@
             min-height: 100vh;
             padding-top: 60px; /* 為固定導航欄留出空間 */
         }
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-bottom: 20px;
+            z-index: 1; /* 確保地圖在導航欄下方 */
+        }
+        #locationInput {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .review-list {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .review-item {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .review-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .navbar {
+            background-color: rgba(0, 0, 0, 0.7); /* 確保導航欄背景一致 */
+            z-index: 1000; /* 確保導航欄在最上層 */
+        }
+        #flagSelection {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .flag-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .flag-item img {
+            width: 54px;
+            height: 48px;
+            margin-right: 10px;
+        }
+        .flag-item span {
+            color: white;
+        }
+        .review-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .review-header img {
+            width: 36px;
+            height: 32px;
+            margin-right: 10px;
+        }
+        .review-header h3 {
+            margin: 0;
+        }
+        .leaflet-top {
+            top: 60px; /* 為固定導航欄留出空間 */
+        }
     </style>
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-  <div class="container">
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-lg-3">
-        <li class="nav-item">
-          <a class="nav-link text-white" href="index_personal.html">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="eat.html">Eat</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="travel.html">Travel</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white" href="box.html">Video</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link text-white active" aria-current="page" href="#">Note</a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-lg-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="index_personal.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="eat.html">Eat</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white "  href="travel.html">Travel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="box.html">Video</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white active"  aria-current="page" href="#">Note</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
 <div class="content-wrapper">
   <div class="container">
-    <h1 class="mt-5 text-white">HandBook</h1>
-    <!-- 在這裡添加筆記相關的內容 -->
+    <h1 class="mt-5 text-white">Note</h1>
+    <textarea id="reviewContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
+    <button onclick="submitReview()" class="btn btn-primary">submit</button>
+    <div class="review-list mt-4">
+      <h2 class="text-white">List</h2>
+      <div id="reviewList" class="text-white"></div>
+    </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
