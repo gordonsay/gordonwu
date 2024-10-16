@@ -413,7 +413,7 @@ function uploadFlagToFirebase(file, dataUrl) {
             const newFlag = { name: file.name, url: downloadURL, isCustom: true };
             flagIcons.push(newFlag);
             
-            // 將新的 flag 保存到 Firebase Database
+            // 將的 flag 保存到 Firebase Database
             customFlagsRef.push(newFlag).then(() => {
                 renderFlagSelection();
                 alert("Upload Success");
@@ -489,18 +489,32 @@ function renderReviews() {
             snapshot.forEach(childSnapshot => {
                 const review = childSnapshot.val();
                 const reviewElement = document.createElement('div');
-                reviewElement.className = 'review-item';
+                reviewElement.className = 'review-item mb-3';
                 reviewElement.innerHTML = `
-                    <div class="review-header">
-                        <img src="${review.iconUrl}" alt="Flag icon" style="width:54px;height:48px;">
-                        <h3>${review.locationName}</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="review-header">
+                            <img src="${review.iconUrl}" alt="Flag icon" style="width:54px;height:48px;">
+                            <h3 class="review-title">${review.locationName}</h3>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary btn-sm me-2" onclick="editReview('${childSnapshot.key}')">編輯</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteReview('${childSnapshot.key}')">刪除</button>
+                        </div>
                     </div>
-                    <p>${review.content}</p>
-                    <small>${new Date(review.timestamp).toLocaleString()}</small>
-                    <button onclick="deleteReview('${childSnapshot.key}')" class="btn btn-danger btn-sm">刪除</button>
+                    <p class="review-content">${review.content}</p>
+                    <small class="text-muted">${new Date(review.timestamp).toLocaleString()}</small>
+                    <div class="edit-form" style="display: none;">
+                        <input type="text" class="form-control mb-2 edit-location" value="${review.locationName}">
+                        <textarea class="form-control mb-2 edit-content" rows="4">${review.content}</textarea>
+                        <div class="btn-group mt-2 d-flex justify-content-between">
+                            <button class="btn btn-warning btn-sm flex-grow-0 me-2" style="width: 30%;" onclick="relocateReview('${childSnapshot.key}')">重新選擇位置</button>
+                            <button class="btn btn-success btn-sm flex-grow-0 me-2" style="width: 30%;" onclick="saveReview('${childSnapshot.key}')">儲存</button>
+                            <button class="btn btn-secondary btn-sm flex-grow-0" style="width: 30%;" onclick="cancelEdit('${childSnapshot.key}')">取消</button>
+                        </div>
+                    </div>
                 `;
                 reviewElement.onclick = function(e) {
-                    if (e.target.tagName !== 'BUTTON') {
+                    if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                         map.setView([review.lat, review.lng], 15);
                         markers.find(m => m.getLatLng().lat === review.lat && m.getLatLng().lng === review.lng).openPopup();
                     }
@@ -526,6 +540,86 @@ function deleteReview(id) {
     database.ref('eatReviews').child(id).remove()
         .then(() => renderReviews())
         .catch(error => console.error("Error deleting review: ", error));
+}
+
+function editReview(id) {
+    const reviewElement = document.querySelector(`[onclick="editReview('${id}')"]`).closest('.review-item');
+    reviewElement.querySelector('.review-title').style.display = 'none';
+    reviewElement.querySelector('.review-content').style.display = 'none';
+    reviewElement.querySelector('.edit-form').style.display = 'block';
+
+    // 獲取當前評論的位置
+    database.ref('eatReviews').child(id).once('value')
+        .then(snapshot => {
+            const review = snapshot.val();
+            if (review) {
+                // 在地圖上添加臨時標記
+                if (tempMarker) {
+                    map.removeLayer(tempMarker);
+                }
+                tempMarker = L.marker([review.lat, review.lng], {icon: createCustomIcon(review.iconUrl)}).addTo(map);
+                map.setView([review.lat, review.lng], 15);
+            }
+        });
+}
+
+function cancelEdit(id) {
+    const reviewElement = document.querySelector(`[onclick="editReview('${id}')"]`).closest('.review-item');
+    reviewElement.querySelector('.review-title').style.display = 'block';
+    reviewElement.querySelector('.review-content').style.display = 'block';
+    reviewElement.querySelector('.edit-form').style.display = 'none';
+}
+
+function saveReview(id) {
+    const reviewElement = document.querySelector(`[onclick="editReview('${id}')"]`).closest('.review-item');
+    const newLocation = reviewElement.querySelector('.edit-location').value;
+    const newContent = reviewElement.querySelector('.edit-content').value;
+
+    if (!newLocation || !newContent) {
+        alert('請輸入地點和內容');
+        return;
+    }
+
+    let updateData = {
+        locationName: newLocation,
+        content: newContent,
+        timestamp: Date.now()
+    };
+
+    // 如果用戶重新選擇了位置，更新經緯度
+    if (selectedLocation) {
+        updateData.lat = selectedLocation.lat;
+        updateData.lng = selectedLocation.lng;
+    }
+
+    // 如果用戶選擇了新的圖標，更新圖標 URL
+    if (selectedIcon) {
+        updateData.iconUrl = selectedIcon.options.iconUrl;
+    }
+
+    database.ref('eatReviews').child(id).update(updateData)
+    .then(() => {
+        renderReviews();
+        // 重置臨時變量
+        selectedLocation = null;
+        selectedIcon = null;
+        if (tempMarker) {
+            map.removeLayer(tempMarker);
+            tempMarker = null;
+        }
+    })
+    .catch(error => console.error("Error updating review: ", error));
+}
+
+function relocateReview(id) {
+    alert('請在地圖上點擊新的位置');
+    map.once('click', function(e) {
+        if (tempMarker) {
+            map.removeLayer(tempMarker);
+        }
+        tempMarker = L.marker(e.latlng, {icon: selectedIcon}).addTo(map);
+        selectedLocation = e.latlng;
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
