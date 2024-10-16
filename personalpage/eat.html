@@ -227,6 +227,9 @@ const database = firebase.database();
 // 初化 Firebase Storage
 const storage = firebase.storage();
 
+// 修改 Firebase 數據結構
+const customFlagsRef = database.ref('customFlags/eat');
+
 function initMap() {
     map = L.map('map').setView([23.97, 120.97], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -360,7 +363,7 @@ function removeFlagFromSelection(flag) {
     if (index > -1) {
         flagIcons.splice(index, 1);
         renderFlagSelection();
-        database.ref('customFlags').orderByChild('url').equalTo(flag.url).once('value', snapshot => {
+        customFlagsRef.orderByChild('url').equalTo(flag.url).once('value', snapshot => {
             snapshot.forEach(childSnapshot => {
                 childSnapshot.ref.remove();
             });
@@ -369,30 +372,31 @@ function removeFlagFromSelection(flag) {
 }
 
 function uploadFlagToFirebase(file, dataUrl) {
-    const storageRef = storage.ref('flags/' + file.name);
+    const storageRef = storage.ref('flags/eat/' + file.name);
     storageRef.put(file).then((snapshot) => {
         snapshot.ref.getDownloadURL().then((downloadURL) => {
             const newFlag = { name: file.name, url: downloadURL, isCustom: true };
             flagIcons.push(newFlag);
             
             // 將新的 flag 保存到 Firebase Database
-            database.ref('customFlags').push(newFlag).then(() => {
-                renderFlagSelection(); // 重新渲染圖示選擇區
-                alert("圖示上傳成功！");
+            customFlagsRef.push(newFlag).then(() => {
+                renderFlagSelection();
+                alert("Upload Success");
             });
         });
     }).catch((error) => {
         console.error("Error uploading flag:", error);
-        alert("上傳失敗，請稍後再試。");
+        alert("Upload Error");
     });
 }
 
 function loadCustomFlags() {
-    database.ref('customFlags').once('value')
+    customFlagsRef.once('value')
         .then(snapshot => {
             snapshot.forEach(childSnapshot => {
                 const flag = childSnapshot.val();
                 flag.isCustom = true;
+
                 if (!flagIcons.some(f => f.url === flag.url)) {
                     flagIcons.push(flag);
                 }
