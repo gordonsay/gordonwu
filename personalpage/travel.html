@@ -24,6 +24,7 @@
             height: 400px;
             width: 100%;
             margin-bottom: 20px;
+            z-index: 1; /* 確保地圖在導航欄下方 */
         }
         #locationInput {
             width: 100%;
@@ -47,6 +48,7 @@
         }
         .navbar {
             background-color: rgba(0, 0, 0, 0.7); /* 確保導航欄背景一致 */
+            z-index: 1000; /* 確保導航欄在最上層 */
         }
         #flagSelection {
             display: flex;
@@ -79,6 +81,9 @@
         }
         .review-header h3 {
             margin: 0;
+        }
+        .leaflet-top {
+            top: 60px; /* 為固定導航欄留出空間 */
         }
     </style>
 </head>
