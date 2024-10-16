@@ -19,12 +19,12 @@
         .content-wrapper {
             background-color: rgba(0, 0, 0, 0.6); /* 黑色背景，透明度為 0.6 */
             min-height: 100vh;
-            padding-top: 60px; /* 為固定導航欄留出空間 */
+            padding-top: 60px; /* 固定導航欄留出空間 */
         }
         #map {
             height: 400px;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 0; /* 移除底部邊距 */
             z-index: 1; /* 確保地圖在導航欄下方 */
         }
         #locationInput {
@@ -52,15 +52,34 @@
             z-index: 1000; /* 確保導航欄在最上層 */
         }
         #flagSelection {
+            height: 400px; /* 與地圖高度相同 */
+            overflow-y: auto; /* 如果內容過多，添加滾動條 */
+        }
+        .flag-list-header {
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .flag-containers {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .default-flags, .custom-flags {
+            width: 48%; /* 調整寬度以適應兩列佈局 */
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         .flag-item {
             display: flex;
             align-items: center;
             margin-bottom: 10px;
             cursor: pointer;
+            opacity: 0; /* 初始設置為透明 */
+            transform: translateY(10px); /* 初始位置略微向下 */
+            transition: opacity 0.3s ease, transform 0.3s ease; /* 添加淡入和位移效果 */
         }
         .flag-item img {
             width: 54px;
@@ -85,6 +104,15 @@
         }
         .leaflet-top {
             top: 60px; /* 為固定導航欄留出空間 */
+        }
+        .row {
+            margin-bottom: 0; /* 移除行之間的底部邊距 */
+        }
+        .mt-3 {
+            margin-top: 1rem !important; /* 減少頂部邊距 */
+        }
+        #locationInfo {
+            margin-bottom: 0.5rem; /* 減少底部邊距 */
         }
     </style>
 </head>
@@ -125,14 +153,32 @@
       </div>
       <div class="col-md-3">
         <div id="flagSelection" class="mb-3">
-          <h4 class="text-white">FlagList</h4>
-          <!-- flag 圖示將在這裡動態添加 -->
+          <div class="flag-list-header">
+            <h4 class="text-white">FlagList</h4>
+            <div>
+              <label for="uploadFlag" class="btn btn-secondary btn-sm">
+                UploadFlag
+                <input type="file" id="uploadFlag" style="display:none;" accept=".png,.jpg,.jpeg">
+              </label>
+              <button id="removeFlags" class="btn btn-danger btn-sm">RemoveFlag</button>
+            </div>
+          </div>
+          <div class="flag-containers">
+            <div class="default-flags"></div>
+            <div class="custom-flags"></div>
+          </div>
         </div>
       </div>
     </div>
-    <input id="locationInput" type="text" placeholder="Location" class="form-control">
-    <textarea id="reviewContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
-    <button onclick="submitReview()" class="btn btn-primary">submit</button>
+    <div class="row mt-3">
+      <div class="col-12">
+        <div id="locationInfo" class="text-white mb-2">
+          <input type="text" id="locationInput" class="form-control" placeholder="location">
+        </div>
+        <textarea id="reviewContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
+        <button onclick="submitReview()" class="btn btn-primary">submit</button>
+      </div>
+    </div>
     <div class="review-list mt-4">
       <h2 class="text-white">List</h2>
       <div id="reviewList" class="text-white"></div>
@@ -145,6 +191,7 @@
 <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script>
 // Firebase 配置
 const firebaseConfig = {
@@ -188,8 +235,14 @@ function createCustomIcon(iconUrl) {
 // 初始選擇默認圖標
 selectedIcon = createCustomIcon(flagIcons[0].url);
 
+// 初化 Firebase Storage
+const storage = firebase.storage();
+
 function initMap() {
     try {
+        if (!L || !GeoSearch) {
+            throw new Error("Leaflet or GeoSearch not loaded");
+        }
         map = L.map('map').setView([23.97, 120.97], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -241,34 +294,41 @@ function initMap() {
             }
             tempMarker = L.marker(e.latlng, {icon: selectedIcon}).addTo(map);
             selectedLocation = e.latlng;
+            updateLocationInfo(e.latlng);
         });
 
-        renderReviews();
+        renderFlagSelection();
+        renderReviews(); // 移到這裡
+
     } catch (error) {
         console.error("Error initializing map:", error);
-        alert("地圖載入失敗，請檢查控制台以獲取更多信息。");
+        alert("Load Error");
     }
 }
 
-function submitReview() {
-    const locationInput = document.getElementById('locationInput').value;
-    const content = document.getElementById('reviewContent').value;
-    if (!locationInput || !content) return;
+function updateLocationInfo(latlng) {
+    const locationInput = document.getElementById('locationInput');
+    locationInput.value = `緯度: ${latlng.lat.toFixed(6)}, 經度: ${latlng.lng.toFixed(6)}`;
+}
 
-    let lat, lng;
-    if (tempMarker) {
-        lat = tempMarker.getLatLng().lat;
-        lng = tempMarker.getLatLng().lng;
-    } else {
-        alert('請點擊地圖選擇位置');
+function submitReview() {
+    const locationName = document.getElementById('locationInput').value;
+    const content = document.getElementById('reviewContent').value;
+    if (!locationName || !content) {
+        alert('請輸入位置名稱和內容');
+        return;
+    }
+
+    if (!selectedLocation) {
+        alert('點擊地圖選擇位置');
         return;
     }
 
     const review = {
-        locationName: locationInput,
+        locationName,
         content,
-        lat,
-        lng,
+        lat: selectedLocation.lat,
+        lng: selectedLocation.lng,
         timestamp: Date.now(),
         iconUrl: selectedIcon.options.iconUrl
     };
@@ -337,7 +397,196 @@ function deleteReview(id) {
         .catch(error => console.error("Error deleting review: ", error));
 }
 
-document.addEventListener('DOMContentLoaded', initMap);
+// 上傳圖片到 Firebase Storage 並添加到 flagIcons
+function uploadFlagToFirebase(file, dataUrl) {
+    const storageRef = storage.ref('flags/' + file.name);
+    storageRef.put(file).then((snapshot) => {
+        snapshot.ref.getDownloadURL().then((downloadURL) => {
+            const newFlag = { name: file.name, url: downloadURL, isCustom: true };
+            flagIcons.push(newFlag);
+            
+            // 將新的 flag 保存到 Firebase Database
+            database.ref('customFlags').push(newFlag).then(() => {
+                renderFlagSelection(); // 重新渲染圖示選擇區
+                alert("Upload Success");
+            });
+        });
+    }).catch((error) => {
+        console.error("Error uploading flag:", error);
+        alert("Upload Error");
+    });
+}
+
+// 將新的 flag 添加到選擇列表
+function addFlagToSelection(flag) {
+    const flagSelection = document.getElementById('flagSelection');
+    const flagItem = document.createElement('div');
+    flagItem.className = 'flag-item';
+    
+    const flagElement = document.createElement('img');
+    flagElement.src = flag.url;
+    flagElement.alt = flag.name;
+    flagElement.title = flag.name;
+    
+    const flagName = document.createElement('span');
+    flagName.textContent = flag.name;
+    
+    const removeButton = document.createElement('span');
+    removeButton.textContent = 'X';
+    removeButton.className = 'remove-flag';
+    removeButton.style.display = 'none';
+    removeButton.onclick = (e) => {
+        e.stopPropagation();
+        removeFlagFromSelection(flag);
+    };
+    
+    flagItem.appendChild(flagElement);
+    flagItem.appendChild(flagName);
+    flagItem.appendChild(removeButton);
+    
+    flagItem.onclick = () => {
+        selectedIcon = createCustomIcon(flag.url);
+        if (tempMarker) {
+            tempMarker.setIcon(selectedIcon);
+        }
+        document.querySelectorAll('.flag-item').forEach(item => item.style.backgroundColor = '');
+        flagItem.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+    };
+    
+    flagSelection.insertBefore(flagItem, flagSelection.lastElementChild);
+}
+
+function removeFlagFromSelection(flag) {
+    const index = flagIcons.findIndex(f => f.url === flag.url);
+    if (index > -1) {
+        flagIcons.splice(index, 1);
+        renderFlagSelection();
+        database.ref('customFlags').orderByChild('url').equalTo(flag.url).once('value', snapshot => {
+            snapshot.forEach(childSnapshot => {
+                childSnapshot.ref.remove();
+            });
+        });
+    }
+}
+
+function renderFlagSelection() {
+    const defaultFlagsContainer = document.querySelector('.default-flags');
+    const customFlagsContainer = document.querySelector('.custom-flags');
+
+    // 清空現有的圖示
+    defaultFlagsContainer.innerHTML = '<h5 class="text-white">DefaultFlag</h5>';
+    customFlagsContainer.innerHTML = '<h5 class="text-white">SelfFlag</h5>';
+
+    // 添加預設圖示
+    flagIcons.filter(flag => !flag.isCustom).forEach((flag, index) => {
+        const flagItem = createFlagItem(flag);
+        defaultFlagsContainer.appendChild(flagItem);
+        setTimeout(() => {
+            flagItem.style.opacity = '1';
+            flagItem.style.transform = 'translateY(0)';
+        }, 50 * index);
+    });
+
+    // 添加自定義圖示
+    flagIcons.filter(flag => flag.isCustom).forEach((flag, index) => {
+        const flagItem = createFlagItem(flag);
+        customFlagsContainer.appendChild(flagItem);
+        setTimeout(() => {
+            flagItem.style.opacity = '1';
+            flagItem.style.transform = 'translateY(0)';
+        }, 50 * (index + flagIcons.filter(f => !f.isCustom).length));
+    });
+
+    // 立即顯示容器
+    defaultFlagsContainer.style.opacity = '1';
+    customFlagsContainer.style.opacity = '1';
+}
+
+function createFlagItem(flag) {
+    const flagItem = document.createElement('div');
+    flagItem.className = 'flag-item';
+    
+    const flagElement = document.createElement('img');
+    flagElement.src = flag.url;
+    flagElement.alt = flag.name;
+    flagElement.title = flag.name;
+    
+    const flagName = document.createElement('span');
+    flagName.textContent = flag.name;
+    
+    flagItem.appendChild(flagElement);
+    flagItem.appendChild(flagName);
+    
+    if (flag.isCustom) {
+        const removeButton = document.createElement('span');
+        removeButton.textContent = 'X';
+        removeButton.className = 'remove-flag';
+        removeButton.style.display = 'none';
+        removeButton.onclick = (e) => {
+            e.stopPropagation();
+            removeFlagFromSelection(flag);
+        };
+        flagItem.appendChild(removeButton);
+    }
+    
+    flagItem.onclick = () => {
+        selectedIcon = createCustomIcon(flag.url);
+        if (tempMarker) {
+            tempMarker.setIcon(selectedIcon);
+        }
+        document.querySelectorAll('.flag-item').forEach(item => item.style.backgroundColor = '');
+        flagItem.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+    };
+    
+    return flagItem;
+}
+
+// 在頁面加載時獲取自定義 flags
+function loadCustomFlags() {
+    database.ref('customFlags').once('value')
+        .then(snapshot => {
+            snapshot.forEach(childSnapshot => {
+                const flag = childSnapshot.val();
+                flag.isCustom = true;
+                if (!flagIcons.some(f => f.url === flag.url)) {
+                    flagIcons.push(flag);
+                }
+            });
+            renderFlagSelection(); // 直接調用，不用 setTimeout
+        })
+        .catch(error => console.error("Error loading custom flags:", error));
+}
+
+// 在 DOMContentLoaded 事件中調用 loadCustomFlags
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    loadCustomFlags(); // 直接調用，不使用 setTimeout
+
+    const removeFlags = document.getElementById('removeFlags');
+    if (removeFlags) {
+        removeFlags.addEventListener('click', () => {
+            const removeButtons = document.querySelectorAll('.remove-flag');
+            removeButtons.forEach(button => {
+                button.style.display = button.style.display === 'none' ? 'inline' : 'none';
+            });
+        });
+    }
+
+    // 添加上傳事件監聽器
+    const uploadFlag = document.getElementById('uploadFlag');
+    if (uploadFlag) {
+        uploadFlag.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadFlagToFirebase(file, e.target.result);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
 </script>
 
 </body>
