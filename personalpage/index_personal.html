@@ -13,14 +13,30 @@
     <style>
         body {
             background-color: rgba(0, 105, 148, 0.7); /* 海洋藍色，透明度為 0.7 */
+            background-image: url('您的背景圖片路徑'); /* 添加背景圖片 */
+            background-position: center center; /* 居中背景圖片 */
+            background-repeat: no-repeat; /* 不重複背景圖片 */
+            background-size: cover; /* 覆蓋整個視窗 */
+            background-attachment: fixed; /* 固定背景，不隨頁面滾動 */
         }
         .content-wrapper {
             background-color: rgba(0, 0, 0, 0.6); /* 黑色背景，透明度為 0.6 */
             min-height: 100vh;
             padding-top: 60px; /* 為固定導航欄留出空間 */
+            display: flex; /* 使用 flexbox 佈局 */
+            flex-direction: column; /* 垂直排列子元素 */
+            justify-content: center; /* 垂直居中內容 */
         }
         .navbar {
             background-color: rgba(0, 0, 0, 0.7); /* 確保導航欄背景一致 */
+        }
+        .hero-section {
+            padding: 20px; /* 添加一些內邊距 */
+        }
+        @media (max-width: 768px) {
+            body {
+                background-attachment: scroll; /* 在小螢幕上允許背景滾動 */
+            }
         }
     </style>
 </head>
