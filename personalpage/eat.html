@@ -51,23 +51,40 @@
             z-index: 1000; /* 確保導航欄在最上層 */
         }
         #flagSelection {
+            height: 400px; /* 與地圖高度相同 */
+            overflow-y: auto; /* 如果內容過多，添加滾動條 */
+        }
+        .flag-list-header {
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .flag-containers {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+        .default-flags, .custom-flags {
+            width: 48%; /* 為兩列留出一些間距 */
         }
         .flag-item {
             display: flex;
             align-items: center;
             margin-bottom: 10px;
             cursor: pointer;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
         .flag-item img {
-            width: 54px;
+            width: 54px; /* 調整為與 travel.html 相同的大小 */
             height: 48px;
             margin-right: 10px;
         }
         .flag-item span {
             color: white;
+            font-size: 1em; /* 恢復正常字體大小 */
         }
         .review-header {
             display: flex;
@@ -75,8 +92,8 @@
             margin-bottom: 5px;
         }
         .review-header img {
-            width: 36px;
-            height: 32px;
+            width: 54px;
+            height: 48px;
             margin-right: 10px;
         }
         .review-header h3 {
@@ -85,10 +102,16 @@
         .leaflet-top {
             top: 60px; /* 為固定導航欄留出空間 */
         }
+        /* 調整地圖上的標記圖示大小 */
+        .leaflet-marker-icon {
+            width: 54px !important;
+            height: 48px !important;
+        }
     </style>
     <!-- 在 <head> 部分添加 Firebase 腳本 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
@@ -127,8 +150,20 @@
       </div>
       <div class="col-md-3">
         <div id="flagSelection" class="mb-3">
-          <h4 class="text-white">FlagList</h4>
-          <!-- flag 圖示將在這裡動態添加 -->
+          <div class="flag-list-header">
+            <h4 class="text-white">FlagList</h4>
+            <div>
+              <label for="uploadFlag" class="btn btn-secondary btn-sm">
+                UploadFlag
+                <input type="file" id="uploadFlag" style="display:none;" accept=".png,.jpg,.jpeg">
+              </label>
+              <button id="removeFlags" class="btn btn-danger btn-sm">RemoveFlag</button>
+            </div>
+          </div>
+          <div class="flag-containers">
+            <div class="default-flags"></div>
+            <div class="custom-flags"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -165,9 +200,9 @@ const flagIcons = [
 function createCustomIcon(iconUrl) {
     return L.icon({
         iconUrl: iconUrl,
-        iconSize: [36, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32]
+        iconSize: [54, 48],
+        iconAnchor: [27, 48],
+        popupAnchor: [0, -48]
     });
 }
 
@@ -188,6 +223,9 @@ const firebaseConfig = {
 // 初始化 Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
+
+// 初化 Firebase Storage
+const storage = firebase.storage();
 
 function initMap() {
     map = L.map('map').setView([23.97, 120.97], 7);
@@ -245,7 +283,123 @@ function initMap() {
         selectedLocation = e.latlng;
     });
 
+    renderFlagSelection();
     renderReviews();
+}
+
+function renderFlagSelection() {
+    const defaultFlagsContainer = document.querySelector('.default-flags');
+    const customFlagsContainer = document.querySelector('.custom-flags');
+
+    // 清空現有的圖示
+    defaultFlagsContainer.innerHTML = '<h5 class="text-white">DefaultFlag</h5>';
+    customFlagsContainer.innerHTML = '<h5 class="text-white">SelfFlag</h5>';
+
+    // 添加預設圖示
+    flagIcons.filter(flag => !flag.isCustom).forEach((flag, index) => {
+        const flagItem = createFlagItem(flag);
+        defaultFlagsContainer.appendChild(flagItem);
+        setTimeout(() => {
+            flagItem.style.opacity = '1';
+            flagItem.style.transform = 'translateY(0)';
+        }, 50 * index);
+    });
+
+    // 添加自定義圖示
+    flagIcons.filter(flag => flag.isCustom).forEach((flag, index) => {
+        const flagItem = createFlagItem(flag);
+        customFlagsContainer.appendChild(flagItem);
+        setTimeout(() => {
+            flagItem.style.opacity = '1';
+            flagItem.style.transform = 'translateY(0)';
+        }, 50 * (index + flagIcons.filter(f => !f.isCustom).length));
+    });
+}
+
+function createFlagItem(flag) {
+    const flagItem = document.createElement('div');
+    flagItem.className = 'flag-item';
+    
+    const flagElement = document.createElement('img');
+    flagElement.src = flag.url;
+    flagElement.alt = flag.name;
+    flagElement.title = flag.name;
+    
+    const flagName = document.createElement('span');
+    flagName.textContent = flag.name;
+    
+    flagItem.appendChild(flagElement);
+    flagItem.appendChild(flagName);
+    
+    if (flag.isCustom) {
+        const removeButton = document.createElement('span');
+        removeButton.textContent = 'X';
+        removeButton.className = 'remove-flag';
+        removeButton.style.display = 'none';
+        removeButton.onclick = (e) => {
+            e.stopPropagation();
+            removeFlagFromSelection(flag);
+        };
+        flagItem.appendChild(removeButton);
+    }
+    
+    flagItem.onclick = () => {
+        selectedIcon = createCustomIcon(flag.url);
+        if (tempMarker) {
+            tempMarker.setIcon(selectedIcon);
+        }
+        document.querySelectorAll('.flag-item').forEach(item => item.style.backgroundColor = '');
+        flagItem.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+    };
+    
+    return flagItem;
+}
+
+function removeFlagFromSelection(flag) {
+    const index = flagIcons.findIndex(f => f.url === flag.url);
+    if (index > -1) {
+        flagIcons.splice(index, 1);
+        renderFlagSelection();
+        database.ref('customFlags').orderByChild('url').equalTo(flag.url).once('value', snapshot => {
+            snapshot.forEach(childSnapshot => {
+                childSnapshot.ref.remove();
+            });
+        });
+    }
+}
+
+function uploadFlagToFirebase(file, dataUrl) {
+    const storageRef = storage.ref('flags/' + file.name);
+    storageRef.put(file).then((snapshot) => {
+        snapshot.ref.getDownloadURL().then((downloadURL) => {
+            const newFlag = { name: file.name, url: downloadURL, isCustom: true };
+            flagIcons.push(newFlag);
+            
+            // 將新的 flag 保存到 Firebase Database
+            database.ref('customFlags').push(newFlag).then(() => {
+                renderFlagSelection(); // 重新渲染圖示選擇區
+                alert("圖示上傳成功！");
+            });
+        });
+    }).catch((error) => {
+        console.error("Error uploading flag:", error);
+        alert("上傳失敗，請稍後再試。");
+    });
+}
+
+function loadCustomFlags() {
+    database.ref('customFlags').once('value')
+        .then(snapshot => {
+            snapshot.forEach(childSnapshot => {
+                const flag = childSnapshot.val();
+                flag.isCustom = true;
+                if (!flagIcons.some(f => f.url === flag.url)) {
+                    flagIcons.push(flag);
+                }
+            });
+            renderFlagSelection();
+        })
+        .catch(error => console.error("Error loading custom flags:", error));
 }
 
 function submitReview() {
@@ -299,7 +453,7 @@ function renderReviews() {
                 reviewElement.className = 'review-item';
                 reviewElement.innerHTML = `
                     <div class="review-header">
-                        <img src="${review.iconUrl}" alt="Flag icon">
+                        <img src="${review.iconUrl}" alt="Flag icon" style="width:54px;height:48px;">
                         <h3>${review.locationName}</h3>
                     </div>
                     <p>${review.content}</p>
@@ -317,7 +471,7 @@ function renderReviews() {
                 const marker = L.marker([review.lat, review.lng], {icon: createCustomIcon(review.iconUrl)}).addTo(map);
                 marker.bindPopup(`
                     <div class="review-header">
-                        <img src="${review.iconUrl}" alt="Flag icon" style="width:36px;height:32px;margin-right:10px;">
+                        <img src="${review.iconUrl}" alt="Flag icon" style="width:54px;height:48px;margin-right:10px;">
                         <b>${review.locationName}</b>
                     </div>
                     <p>${review.content}</p>
@@ -335,7 +489,34 @@ function deleteReview(id) {
         .catch(error => console.error("Error deleting review: ", error));
 }
 
-document.addEventListener('DOMContentLoaded', initMap);
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    loadCustomFlags();
+
+    const removeFlags = document.getElementById('removeFlags');
+    if (removeFlags) {
+        removeFlags.addEventListener('click', () => {
+            const removeButtons = document.querySelectorAll('.remove-flag');
+            removeButtons.forEach(button => {
+                button.style.display = button.style.display === 'none' ? 'inline' : 'none';
+            });
+        });
+    }
+
+    const uploadFlag = document.getElementById('uploadFlag');
+    if (uploadFlag) {
+        uploadFlag.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadFlagToFirebase(file, e.target.result);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
 </script>
 </body>
 </html>
