@@ -18,7 +18,7 @@
         .content-wrapper {
             background-color: rgba(0, 0, 0, 0.6); /* 黑色背景，透明度為 0.6 */
             min-height: 100vh;
-            padding-top: 60px; /* 為固定導航欄留出空間 */
+            padding-top: 60px; /* 固定導航欄留出空間 */
         }
         #map {
             height: 400px;
@@ -107,6 +107,34 @@
             width: 54px !important;
             height: 48px !important;
         }
+        .mt-3 {
+            margin-top: 1rem !important; /* 減少頂部邊距 */
+        }
+        @media (max-width: 768px) {
+            #map {
+                height: 300px; /* 減小地圖高度 */
+            }
+
+            #flagSelection {
+                max-height: 200px; /* 設置最大高度 */
+                overflow-y: auto; /* 添加垂直滾動條 */
+            }
+
+            .flag-containers {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+
+            .flag-item {
+                width: 48%; /* 每行顯示兩個圖標 */
+                margin-bottom: 10px;
+            }
+
+            .content-wrapper {
+                padding-top: 70px; /* 增加頂部內邊距，為固定導航欄留出更多空間 */
+            }
+        }
     </style>
     <!-- 在 <head> 部分添加 Firebase 腳本 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -143,12 +171,12 @@
 
 <div class="content-wrapper">
   <div class="container">
-    <h1 class="mt-5 text-white">Eat Note</h1>
+    <h1 class="mt-3 text-white">Eat Note</h1>
     <div class="row">
-      <div class="col-md-9">
+      <div class="col-md-9 col-12">
         <div id="map"></div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-3 col-12 mt-3 mt-md-0">
         <div id="flagSelection" class="mb-3">
           <div class="flag-list-header">
             <h4 class="text-white">FlagList</h4>
@@ -167,9 +195,13 @@
         </div>
       </div>
     </div>
-    <input id="locationInput" type="text" placeholder="Location" class="form-control">
-    <textarea id="reviewContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
-    <button onclick="submitReview()" class="btn btn-primary">submit</button>
+    <div class="row mt-3">
+      <div class="col-12">
+        <input id="locationInput" type="text" placeholder="Location" class="form-control mb-2">
+        <textarea id="reviewContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
+        <button onclick="submitReview()" class="btn btn-primary">submit</button>
+      </div>
+    </div>
     <div class="review-list mt-4">
       <h2 class="text-white">List</h2>
       <div id="reviewList" class="text-white"></div>
