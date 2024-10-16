@@ -238,6 +238,9 @@ selectedIcon = createCustomIcon(flagIcons[0].url);
 // 初化 Firebase Storage
 const storage = firebase.storage();
 
+// 修改 Firebase 數據結構
+const customFlagsRef = database.ref('customFlags/travel');
+
 function initMap() {
     try {
         if (!L || !GeoSearch) {
@@ -393,17 +396,17 @@ function deleteReview(id) {
         .catch(error => console.error("Error deleting review: ", error));
 }
 
-// 上傳圖��到 Firebase Storage 並���加到 flagIcons
+// 上傳圖到 Firebase Storage 並加到 flagIcons
 function uploadFlagToFirebase(file, dataUrl) {
-    const storageRef = storage.ref('flags/' + file.name);
+    const storageRef = storage.ref('flags/travel/' + file.name);
     storageRef.put(file).then((snapshot) => {
         snapshot.ref.getDownloadURL().then((downloadURL) => {
             const newFlag = { name: file.name, url: downloadURL, isCustom: true };
             flagIcons.push(newFlag);
             
             // 將新的 flag 保存到 Firebase Database
-            database.ref('customFlags').push(newFlag).then(() => {
-                renderFlagSelection(); // 重新渲染圖示選擇區
+            customFlagsRef.push(newFlag).then(() => {
+                renderFlagSelection();
                 alert("Upload Success");
             });
         });
@@ -457,7 +460,7 @@ function removeFlagFromSelection(flag) {
     if (index > -1) {
         flagIcons.splice(index, 1);
         renderFlagSelection();
-        database.ref('customFlags').orderByChild('url').equalTo(flag.url).once('value', snapshot => {
+        customFlagsRef.orderByChild('url').equalTo(flag.url).once('value', snapshot => {
             snapshot.forEach(childSnapshot => {
                 childSnapshot.ref.remove();
             });
@@ -539,16 +542,17 @@ function createFlagItem(flag) {
 
 // 在頁面加載時獲取自定義 flags
 function loadCustomFlags() {
-    database.ref('customFlags').once('value')
+    customFlagsRef.once('value')
         .then(snapshot => {
             snapshot.forEach(childSnapshot => {
                 const flag = childSnapshot.val();
                 flag.isCustom = true;
+
                 if (!flagIcons.some(f => f.url === flag.url)) {
                     flagIcons.push(flag);
                 }
             });
-            renderFlagSelection(); // 直接調用，不用 setTimeout
+            renderFlagSelection();
         })
         .catch(error => console.error("Error loading custom flags:", error));
 }
