@@ -114,6 +114,31 @@
         #locationInfo {
             margin-bottom: 0.5rem; /* 減少底部邊距 */
         }
+        @media (max-width: 768px) {
+            #map {
+                height: 300px; /* 減小地圖高度 */
+            }
+
+            #flagSelection {
+                max-height: 200px; /* 設置最大高度 */
+                overflow-y: auto; /* 添加垂直滾動條 */
+            }
+
+            .flag-containers {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+
+            .flag-item {
+                width: 48%; /* 每行顯示兩個圖標 */
+                margin-bottom: 10px;
+            }
+
+            .content-wrapper {
+                padding-top: 70px; /* 增加頂部內邊距，為固定導航欄留出更多空間 */
+            }
+        }
     </style>
 </head>
 <body>
@@ -146,12 +171,12 @@
 
 <div class="content-wrapper">
   <div class="container">
-    <h1 class="mt-5 text-white">Travel Note</h1>
+    <h1 class="mt-3 text-white">Travel Note</h1>
     <div class="row">
-      <div class="col-md-9">
+      <div class="col-md-9 col-12">
         <div id="map"></div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-3 col-12 mt-3 mt-md-0">
         <div id="flagSelection" class="mb-3">
           <div class="flag-list-header">
             <h4 class="text-white">FlagList</h4>
