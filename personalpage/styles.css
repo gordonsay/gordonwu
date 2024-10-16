@@ -1,0 +1,47 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* margin-top: 50px; */
+    background-color: #050516; /* 將 container 的背景設為深藍色 */
+    padding: 20px; /*加一些內邊距讓水族箱看起來更好*/
+    border-radius: 10px; /* 圓角效果（可選） */
+}
+
+.fish-tank {
+    width: 500px;
+    height: 420px;
+    background: url('test.png') no-repeat center center;
+    /* 替換背景圖 */
+    background-size: cover;
+    /* border: 2px solid black; */
+    position: relative;
+    overflow: hidden;
+    opacity: 0.8;
+    /* 調整透明度 */
+}
+
+.controls {
+    margin-top: 20px;
+}
+
+.float-text {
+    position: absolute;
+    padding: 5px 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid black;
+    border-radius: 5px;
+    cursor: move;
+    display: inline-flex;
+    align-items: center;
+}
+
+.float-text .remove-btn {
+    margin-left: 10px;
+    color: red;
+    cursor: pointer;
+}

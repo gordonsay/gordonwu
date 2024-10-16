@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GJ | Travel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style_personal.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="../icon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../icon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../icon/favicon-16x16.png">
+    <link rel="manifest" href="../icon/site.webmanifest">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            background-color: rgba(0, 105, 148, 0.7); /* 海洋藍色，透明度為 0.7 */
+        }
+        .content-wrapper {
+            background-color: rgba(0, 0, 0, 0.6); /* 黑色背景，透明度為 0.6 */
+            min-height: 100vh;
+            padding-top: 60px; /* 為固定導航欄留出空間 */
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        #locationInput {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .review-list {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .review-item {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .review-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .navbar {
+            background-color: rgba(0, 0, 0, 0.7); /* 確保導航欄背景一致 */
+        }
+        #flagSelection {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .flag-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .flag-item img {
+            width: 54px;
+            height: 48px;
+            margin-right: 10px;
+        }
+        .flag-item span {
+            color: white;
+        }
+        .review-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .review-header img {
+            width: 36px;
+            height: 32px;
+            margin-right: 10px;
+        }
+        .review-header h3 {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-lg-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="index_personal.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="eat.html">Eat</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white active" aria-current="page" href="#">Travel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="box.html">Video</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="note.html">Note</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+<div class="content-wrapper">
+  <div class="container">
+    <h1 class="mt-5 text-white">Travel Note</h1>
+    <div class="row">
+      <div class="col-md-9">
+        <div id="map"></div>
+      </div>
+      <div class="col-md-3">
+        <div id="flagSelection" class="mb-3">
+          <h4 class="text-white">FlagList</h4>
+          <!-- flag 圖示將在這裡動態添加 -->
+        </div>
+      </div>
+    </div>
+    <input id="locationInput" type="text" placeholder="Location" class="form-control">
+    <textarea id="reviewContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
+    <button onclick="submitReview()" class="btn btn-primary">submit</button>
+    <div class="review-list mt-4">
+      <h2 class="text-white">List</h2>
+      <div id="reviewList" class="text-white"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script>
+<script>
+let map;
+let markers = [];
+let reviews = JSON.parse(localStorage.getItem('travelReviews')) || [];
+let tempMarker = null;
+let selectedLocation = null;
+let selectedIcon = null;
+
+// 定義多個 flag 圖示
+const flagIcons = [
+    { name: '開飛機', url: '../icon/bear0.png' },
+    { name: '將抵達', url: '../icon/bear1.png' },
+    { name: '大跳舞', url: '../icon/bear2.png' },
+    { name: '黃金耶', url: '../icon/dog0.png' }
+];
+
+// 創建自定義圖標函數
+function createCustomIcon(iconUrl) {
+    return L.icon({
+        iconUrl: iconUrl,
+        iconSize: [36, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+    });
+}
+
+// 初始選擇默認圖標
+selectedIcon = createCustomIcon(flagIcons[0].url);
+
+function initMap() {
+    map = L.map('map').setView([23.97, 120.97], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const provider = new GeoSearch.OpenStreetMapProvider();
+    const search = new GeoSearch.GeoSearchControl({
+        provider: provider,
+        style: 'bar',
+        autoComplete: true,
+        autoCompleteDelay: 250,
+        showMarker: false,
+        retainZoomLevel: false,
+    });
+    map.addControl(search);
+
+    // 修改 flag 選擇功能
+    const flagSelection = document.getElementById('flagSelection');
+    flagIcons.forEach((flag, index) => {
+        const flagItem = document.createElement('div');
+        flagItem.className = 'flag-item';
+        
+        const flagElement = document.createElement('img');
+        flagElement.src = flag.url;
+        flagElement.alt = flag.name;
+        flagElement.title = flag.name;
+        
+        const flagName = document.createElement('span');
+        flagName.textContent = flag.name;
+        
+        flagItem.appendChild(flagElement);
+        flagItem.appendChild(flagName);
+        
+        flagItem.onclick = () => {
+            selectedIcon = createCustomIcon(flag.url);
+            // 只更新臨時標記的圖標
+            if (tempMarker) {
+                tempMarker.setIcon(selectedIcon);
+            }
+            // 視覺反饋
+            document.querySelectorAll('.flag-item').forEach(item => item.style.backgroundColor = '');
+            flagItem.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        };
+        
+        flagSelection.appendChild(flagItem);
+    });
+
+    map.on('click', function(e) {
+        if (tempMarker) {
+            map.removeLayer(tempMarker);
+        }
+        tempMarker = L.marker(e.latlng, {icon: selectedIcon}).addTo(map);
+        selectedLocation = e.latlng;
+    });
+
+    renderReviews();
+}
+
+function submitReview() {
+    const locationInput = document.getElementById('locationInput').value;
+    const content = document.getElementById('reviewContent').value;
+    if (!locationInput || !content) return;
+
+    let lat, lng;
+    if (tempMarker) {
+        lat = tempMarker.getLatLng().lat;
+        lng = tempMarker.getLatLng().lng;
+    } else {
+        alert('請點擊地圖選擇位置');
+        return;
+    }
+
+    const review = {
+        id: Date.now(),
+        locationName: locationInput,
+        content,
+        lat,
+        lng,
+        timestamp: Date.now(),
+        iconUrl: selectedIcon.options.iconUrl // 保存選擇的圖標 URL
+    };
+    reviews.unshift(review);
+    localStorage.setItem('travelReviews', JSON.stringify(reviews));
+    renderReviews();
+    document.getElementById('locationInput').value = '';
+    document.getElementById('reviewContent').value = '';
+    if (tempMarker) {
+        map.removeLayer(tempMarker);
+        tempMarker = null;
+    }
+    selectedLocation = null;
+}
+
+function renderReviews() {
+    const reviewList = document.getElementById('reviewList');
+    reviewList.innerHTML = '';
+    markers.forEach(marker => map.removeLayer(marker));
+    markers = [];
+
+    reviews.forEach(review => {
+        const reviewElement = document.createElement('div');
+        reviewElement.className = 'review-item';
+        reviewElement.innerHTML = `
+            <div class="review-header">
+                <img src="${review.iconUrl}" alt="Flag icon">
+                <h3>${review.locationName}</h3>
+            </div>
+            <p>${review.content}</p>
+            <small>${new Date(review.timestamp).toLocaleString()}</small>
+            <button onclick="deleteReview(${review.id})" class="btn btn-danger btn-sm">刪除</button>
+        `;
+        reviewElement.onclick = function(e) {
+            if (e.target.tagName !== 'BUTTON') {
+                map.setView([review.lat, review.lng], 15);
+                markers.find(m => m.getLatLng().lat === review.lat && m.getLatLng().lng === review.lng).openPopup();
+            }
+        };
+        reviewList.appendChild(reviewElement);
+
+        const marker = L.marker([review.lat, review.lng], {icon: createCustomIcon(review.iconUrl)}).addTo(map);
+        marker.bindPopup(`
+            <div class="review-header">
+                <img src="${review.iconUrl}" alt="Flag icon" style="width:36px;height:32px;margin-right:10px;">
+                <b>${review.locationName}</b>
+            </div>
+            <p>${review.content}</p>
+            <small>${new Date(review.timestamp).toLocaleString()}</small>
+        `);
+        markers.push(marker);
+    });
+}
+
+function deleteReview(id) {
+    reviews = reviews.filter(review => review.id !== id);
+    localStorage.setItem('travelReviews', JSON.stringify(reviews));
+    renderReviews();
+}
+
+window.onload = initMap;
+</script>
+</body>
+</html>

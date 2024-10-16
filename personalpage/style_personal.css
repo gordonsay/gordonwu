@@ -1,0 +1,54 @@
+body, html {
+    height: 100%;
+    margin: 0;
+}
+
+.hero-section {
+    background: url('bg1.png') no-repeat center center;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: white;
+    text-align: center;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Adds a dark overlay on the background */
+    z-index: 1;
+}
+
+.hero-section .container {
+    position: relative;
+    z-index: 2;
+}
+
+.navbar {
+    background-color: transparent; /* Transparent background for navbar */
+    z-index: 10; /* Ensures the navbar stays on top of the hero section */
+}
+
+.navbar .navbar-brand, .navbar .nav-link {
+    color: white; /* White text for navbar items */
+    font-size: 1.3rem;
+}
+
+.navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5); /* White border for toggler icon */
+}
+
+.navbar .navbar-toggler-icon {
+    color: white; /* White toggler icon */
+}
+
+.navbar .nav-link:hover {
+    color: #ddd; /* Slight hover effect for navbar links */
+}

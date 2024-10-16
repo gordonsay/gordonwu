@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GordonWu | Personal Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icon/favicon-16x16.png">
+    <link rel="manifest" href="icon/site.webmanifest">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">Gordon Wu</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#">About me</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Experience</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Product</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+                <li class="nav-item"></li>
+                    <a class="nav-link" id=securePage href="#">Memo</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="bg-primary text-white text-center py-5">
+    <div class="container">
+        <h1>⏱︎近期最急 周杰倫嘉年華世界巡迴演唱會-台北站</h1>
+        <div class="countdown">
+            <h1><p id="timer"></p></h1>
+            
+        </div>
+        
+        <script>
+        // 設定目標時間為 2024年10月23日中午12點
+        var countDownDate = new Date("October 23, 2024 12:00:00").getTime();
+        
+        // 更新倒數計時器每 1 秒
+        var x = setInterval(function() {
+        
+          // 獲取目前的時間
+          var now = new Date().getTime();
+            
+          // 計算剩餘時間
+          var distance = countDownDate - now;
+            
+          // 計算天數、時數、分鐘和秒數
+          var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+          // 在元素內顯示結果
+          document.getElementById("timer").innerHTML = days + "d " + hours + "h "
+          + minutes + "m " + seconds + "s ";
+            
+          // 如果倒數結束，顯示訊息
+          if (distance < 0) {
+            clearInterval(x);
+            document.getElementById("timer").innerHTML = "EXPIRED";
+          }
+        }, 1000);
+        </script>
+        <p class="lead">售票時間 : 2024年10月23日 (三) 中午12:00</p>
+        <p class="lead">演出時間 : 2024年12月5日 - 2024年12月8日</p>
+        <a href="https://www.youtube.com/watch?v=87VUC4J_0Ps&list=PLoXw5hFmURCQOx8SZRrLhZUj8s3FOUWgZ" class="btn btn-light btn-lg">特訓列車</a>  
+        <a href="https://tixcraft.com/" class="btn btn-light btn-lg">Ticket</a>
+    </div>
+</header>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container text-center">
+        <h2>Features</h2>
+        <p class="lead">Here are some great features of this theme.</p>
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Feature One</h5>
+                        <p class="card-text">A brief description of the first feature.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Feature Two</h5>
+                        <p class="card-text">A brief description of the second feature.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Feature Three</h5>
+                        <p class="card-text">A brief description of the third feature.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="bg-light py-5 text-center">
+    <div class="container">
+        <h2>Where am I?</h2>
+        <p class="lead">Contact by phone. +886983828539</p>
+        <p class="lead">Contact by mail.  a0983828539@gmail.com</p>
+        <a href="#" class="btn btn-primary btn-lg">Contact me</a>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-dark text-white text-center py-4">
+    <div class="container">
+        <p>&copy; 2024 GordonWu All rights reserved.</p>
+    </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="loginModalLabel">Login</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm">
+            <div class="mb-3">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="username" placeholder="Enter Username">
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" placeholder="Enter Password">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="loginSubmit">Login</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+    // 設定帳號與密碼
+    var correctUsername = "0315";
+    var correctPassword = "0315";
+    
+    // 當點擊 "Secure Page" 時觸發
+    document.getElementById("securePage").addEventListener("click", function(event) {
+        event.preventDefault(); // 防止預設行為（跳轉）
+    
+        // 顯示彈出視窗 (Modal)
+        var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        loginModal.show();
+    });
+    
+    // 登錄檢查
+    document.getElementById("loginSubmit").addEventListener("click", function() {
+        var username = document.getElementById("username").value;
+        var password = document.getElementById("password").value;
+    
+        // 檢查帳號與密碼是否正確
+        if (username === correctUsername && password === correctPassword) {
+            alert("Login successful!");
+            window.location.href = "./personalpage/index_personal.html"; // 成功後導向的網址
+        } else {
+            alert("Incorrect username or password!");
+        }
+    });
+    </script>
+
+
+</body>
+</html>
