@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="../icon/favicon-16x16.png">
     <link rel="manifest" href="../icon/site.webmanifest">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css">
     <style>
         body {
             background-color: rgba(0, 105, 148, 0.7); /* 海洋藍色，透明度為 0.7 */
@@ -142,10 +143,26 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script>
+// Firebase 配置
+const firebaseConfig = {
+    apiKey: "AIzaSyAy3wt6h_7zLz946XmAZIFFJAFPCkWUCLk",
+    authDomain: "test-c338f.firebaseapp.com",
+    projectId: "test-c338f",
+    storageBucket: "test-c338f.appspot.com",
+    messagingSenderId: "117988025801",
+    appId: "1:117988025801:web:e95e3c918b8fb9c0e63418",
+    measurementId: "G-VYK0LHZ950"
+};
+
+// 初始化 Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 let map;
 let markers = [];
-let reviews = JSON.parse(localStorage.getItem('travelReviews')) || [];
 let tempMarker = null;
 let selectedLocation = null;
 let selectedIcon = null;
@@ -172,62 +189,65 @@ function createCustomIcon(iconUrl) {
 selectedIcon = createCustomIcon(flagIcons[0].url);
 
 function initMap() {
-    map = L.map('map').setView([23.97, 120.97], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    try {
+        map = L.map('map').setView([23.97, 120.97], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
 
-    const provider = new GeoSearch.OpenStreetMapProvider();
-    const search = new GeoSearch.GeoSearchControl({
-        provider: provider,
-        style: 'bar',
-        autoComplete: true,
-        autoCompleteDelay: 250,
-        showMarker: false,
-        retainZoomLevel: false,
-    });
-    map.addControl(search);
+        const provider = new GeoSearch.OpenStreetMapProvider();
+        const search = new GeoSearch.GeoSearchControl({
+            provider: provider,
+            style: 'bar',
+            autoComplete: true,
+            autoCompleteDelay: 250,
+            showMarker: false,
+            retainZoomLevel: false,
+        });
+        map.addControl(search);
 
-    // 修改 flag 選擇功能
-    const flagSelection = document.getElementById('flagSelection');
-    flagIcons.forEach((flag, index) => {
-        const flagItem = document.createElement('div');
-        flagItem.className = 'flag-item';
-        
-        const flagElement = document.createElement('img');
-        flagElement.src = flag.url;
-        flagElement.alt = flag.name;
-        flagElement.title = flag.name;
-        
-        const flagName = document.createElement('span');
-        flagName.textContent = flag.name;
-        
-        flagItem.appendChild(flagElement);
-        flagItem.appendChild(flagName);
-        
-        flagItem.onclick = () => {
-            selectedIcon = createCustomIcon(flag.url);
-            // 只更新臨時標記的圖標
+        // 修改 flag 選擇功能
+        const flagSelection = document.getElementById('flagSelection');
+        flagIcons.forEach((flag, index) => {
+            const flagItem = document.createElement('div');
+            flagItem.className = 'flag-item';
+            
+            const flagElement = document.createElement('img');
+            flagElement.src = flag.url;
+            flagElement.alt = flag.name;
+            flagElement.title = flag.name;
+            
+            const flagName = document.createElement('span');
+            flagName.textContent = flag.name;
+            
+            flagItem.appendChild(flagElement);
+            flagItem.appendChild(flagName);
+            
+            flagItem.onclick = () => {
+                selectedIcon = createCustomIcon(flag.url);
+                if (tempMarker) {
+                    tempMarker.setIcon(selectedIcon);
+                }
+                document.querySelectorAll('.flag-item').forEach(item => item.style.backgroundColor = '');
+                flagItem.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            };
+            
+            flagSelection.appendChild(flagItem);
+        });
+
+        map.on('click', function(e) {
             if (tempMarker) {
-                tempMarker.setIcon(selectedIcon);
+                map.removeLayer(tempMarker);
             }
-            // 視覺反饋
-            document.querySelectorAll('.flag-item').forEach(item => item.style.backgroundColor = '');
-            flagItem.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-        };
-        
-        flagSelection.appendChild(flagItem);
-    });
+            tempMarker = L.marker(e.latlng, {icon: selectedIcon}).addTo(map);
+            selectedLocation = e.latlng;
+        });
 
-    map.on('click', function(e) {
-        if (tempMarker) {
-            map.removeLayer(tempMarker);
-        }
-        tempMarker = L.marker(e.latlng, {icon: selectedIcon}).addTo(map);
-        selectedLocation = e.latlng;
-    });
-
-    renderReviews();
+        renderReviews();
+    } catch (error) {
+        console.error("Error initializing map:", error);
+        alert("地圖載入失敗，請檢查控制台以獲取更多信息。");
+    }
 }
 
 function submitReview() {
@@ -245,24 +265,26 @@ function submitReview() {
     }
 
     const review = {
-        id: Date.now(),
         locationName: locationInput,
         content,
         lat,
         lng,
         timestamp: Date.now(),
-        iconUrl: selectedIcon.options.iconUrl // 保存選擇的圖標 URL
+        iconUrl: selectedIcon.options.iconUrl
     };
-    reviews.unshift(review);
-    localStorage.setItem('travelReviews', JSON.stringify(reviews));
-    renderReviews();
-    document.getElementById('locationInput').value = '';
-    document.getElementById('reviewContent').value = '';
-    if (tempMarker) {
-        map.removeLayer(tempMarker);
-        tempMarker = null;
-    }
-    selectedLocation = null;
+
+    database.ref('travelReviews').push(review)
+        .then(() => {
+            renderReviews();
+            document.getElementById('locationInput').value = '';
+            document.getElementById('reviewContent').value = '';
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+                tempMarker = null;
+            }
+            selectedLocation = null;
+        })
+        .catch(error => console.error("Error adding review: ", error));
 }
 
 function renderReviews() {
@@ -271,46 +293,52 @@ function renderReviews() {
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
 
-    reviews.forEach(review => {
-        const reviewElement = document.createElement('div');
-        reviewElement.className = 'review-item';
-        reviewElement.innerHTML = `
-            <div class="review-header">
-                <img src="${review.iconUrl}" alt="Flag icon">
-                <h3>${review.locationName}</h3>
-            </div>
-            <p>${review.content}</p>
-            <small>${new Date(review.timestamp).toLocaleString()}</small>
-            <button onclick="deleteReview(${review.id})" class="btn btn-danger btn-sm">刪除</button>
-        `;
-        reviewElement.onclick = function(e) {
-            if (e.target.tagName !== 'BUTTON') {
-                map.setView([review.lat, review.lng], 15);
-                markers.find(m => m.getLatLng().lat === review.lat && m.getLatLng().lng === review.lng).openPopup();
-            }
-        };
-        reviewList.appendChild(reviewElement);
+    database.ref('travelReviews').once('value')
+        .then(snapshot => {
+            snapshot.forEach(childSnapshot => {
+                const review = childSnapshot.val();
+                const reviewElement = document.createElement('div');
+                reviewElement.className = 'review-item';
+                reviewElement.innerHTML = `
+                    <div class="review-header">
+                        <img src="${review.iconUrl}" alt="Flag icon">
+                        <h3>${review.locationName}</h3>
+                    </div>
+                    <p>${review.content}</p>
+                    <small>${new Date(review.timestamp).toLocaleString()}</small>
+                    <button onclick="deleteReview('${childSnapshot.key}')" class="btn btn-danger btn-sm">刪除</button>
+                `;
+                reviewElement.onclick = function(e) {
+                    if (e.target.tagName !== 'BUTTON') {
+                        map.setView([review.lat, review.lng], 15);
+                        markers.find(m => m.getLatLng().lat === review.lat && m.getLatLng().lng === review.lng).openPopup();
+                    }
+                };
+                reviewList.appendChild(reviewElement);
 
-        const marker = L.marker([review.lat, review.lng], {icon: createCustomIcon(review.iconUrl)}).addTo(map);
-        marker.bindPopup(`
-            <div class="review-header">
-                <img src="${review.iconUrl}" alt="Flag icon" style="width:36px;height:32px;margin-right:10px;">
-                <b>${review.locationName}</b>
-            </div>
-            <p>${review.content}</p>
-            <small>${new Date(review.timestamp).toLocaleString()}</small>
-        `);
-        markers.push(marker);
-    });
+                const marker = L.marker([review.lat, review.lng], {icon: createCustomIcon(review.iconUrl)}).addTo(map);
+                marker.bindPopup(`
+                    <div class="review-header">
+                        <img src="${review.iconUrl}" alt="Flag icon" style="width:36px;height:32px;margin-right:10px;">
+                        <b>${review.locationName}</b>
+                    </div>
+                    <p>${review.content}</p>
+                    <small>${new Date(review.timestamp).toLocaleString()}</small>
+                `);
+                markers.push(marker);
+            });
+        })
+        .catch(error => console.error("Error fetching reviews: ", error));
 }
 
 function deleteReview(id) {
-    reviews = reviews.filter(review => review.id !== id);
-    localStorage.setItem('travelReviews', JSON.stringify(reviews));
-    renderReviews();
+    database.ref('travelReviews').child(id).remove()
+        .then(() => renderReviews())
+        .catch(error => console.error("Error deleting review: ", error));
 }
 
-window.onload = initMap;
+document.addEventListener('DOMContentLoaded', initMap);
 </script>
+
 </body>
 </html>
