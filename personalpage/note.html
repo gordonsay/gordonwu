@@ -85,6 +85,15 @@
         .leaflet-top {
             top: 60px; /* 為固定導航欄留出空間 */
         }
+        .emoji-selector {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .emoji-selector span {
+            font-size: 24px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -118,15 +127,101 @@
 <div class="content-wrapper">
   <div class="container">
     <h1 class="mt-5 text-white">Note</h1>
-    <textarea id="reviewContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
-    <button onclick="submitReview()" class="btn btn-primary">submit</button>
+    <input id="noteTitle" type="text" class="form-control mb-2" placeholder="title">
+    <div class="emoji-selector">
+        <span onclick="addEmoji('😊')">😊</span>
+        <span onclick="addEmoji('😂')">😂</span>
+        <span onclick="addEmoji('😍')">😍</span>
+        <span onclick="addEmoji('🤔')">🤔</span>
+        <span onclick="addEmoji('👍')">👍</span>
+    </div>
+    <textarea id="noteContent" class="form-control mb-2" rows="4" placeholder="contents"></textarea>
+    <button onclick="submitNote()" class="btn btn-primary">submit</button>
     <div class="review-list mt-4">
       <h2 class="text-white">List</h2>
-      <div id="reviewList" class="text-white"></div>
+      <div id="noteList" class="text-white"></div>
     </div>
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
+// Firebase 配置
+const firebaseConfig = {
+    apiKey: "AIzaSyAy3wt6h_7zLz946XmAZIFFJAFPCkWUCLk",
+    authDomain: "test-c338f.firebaseapp.com",
+    projectId: "test-c338f",
+    storageBucket: "test-c338f.appspot.com",
+    messagingSenderId: "117988025801",
+    appId: "1:117988025801:web:e95e3c918b8fb9c0e63418",
+    measurementId: "G-VYK0LHZ950"
+};
 
+// 初始化 Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+function addEmoji(emoji) {
+    const noteContent = document.getElementById('noteContent');
+    noteContent.value += emoji;
+}
+
+function submitNote() {
+    const title = document.getElementById('noteTitle').value;
+    const content = document.getElementById('noteContent').value;
+    if (!title || !content) {
+        alert('請輸入標題和內容');
+        return;
+    }
+
+    const note = {
+        title,
+        content,
+        timestamp: Date.now()
+    };
+
+    database.ref('notes').push(note)
+        .then(() => {
+            renderNotes();
+            document.getElementById('noteTitle').value = '';
+            document.getElementById('noteContent').value = '';
+        })
+        .catch(error => console.error("Error adding note: ", error));
+}
+
+function renderNotes() {
+    const noteList = document.getElementById('noteList');
+    noteList.innerHTML = '';
+
+    database.ref('notes').once('value')
+        .then(snapshot => {
+            snapshot.forEach(childSnapshot => {
+                const note = childSnapshot.val();
+                const noteElement = document.createElement('div');
+                noteElement.className = 'review-item mb-3';
+                noteElement.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3>${note.title}</h3>
+                        <button class="btn btn-danger btn-sm" onclick="deleteNote('${childSnapshot.key}')">刪除</button>
+                    </div>
+                    <p>${note.content}</p>
+                    <small class="text-muted">${new Date(note.timestamp).toLocaleString()}</small>
+                    <hr>
+                `;
+                noteList.appendChild(noteElement);
+            });
+        })
+        .catch(error => console.error("Error fetching notes: ", error));
+}
+
+function deleteNote(id) {
+    database.ref('notes').child(id).remove()
+        .then(() => renderNotes())
+        .catch(error => console.error("Error deleting note: ", error));
+}
+
+document.addEventListener('DOMContentLoaded', renderNotes);
+</script>
 </body>
 </html>
