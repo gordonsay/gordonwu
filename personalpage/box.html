@@ -254,17 +254,63 @@ function renderReviews() {
                 reviewElement.className = 'review-item mb-3';
                 reviewElement.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center">
-                        <h3>${review.title}</h3>
-                        <button class="btn btn-danger btn-sm" onclick="deleteReview('${childSnapshot.key}')">刪除</button>
+                        <h3 class="review-title">${review.title}</h3>
+                        <div>
+                            <button class="btn btn-primary btn-sm me-2" onclick="editReview('${childSnapshot.key}')">編輯</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteReview('${childSnapshot.key}')">刪除</button>
+                        </div>
                     </div>
-                    <p>${review.content}</p>
+                    <p class="review-content">${review.content}</p>
                     <small class="text-muted">${review.time}</small>
+                    <div class="edit-form" style="display: none;">
+                        <input type="text" class="form-control mb-2 edit-title" value="${review.title}">
+                        <textarea class="form-control mb-2 edit-content" rows="4">${review.content}</textarea>
+                        <button class="btn btn-success btn-sm me-2" onclick="saveEditedReview('${childSnapshot.key}')">儲存</button>
+                        <button class="btn btn-secondary btn-sm" onclick="cancelEdit('${childSnapshot.key}')">取消</button>
+                    </div>
                     <hr>
                 `;
                 reviewList.appendChild(reviewElement);
             });
         })
         .catch(error => console.error("Error fetching reviews: ", error));
+}
+
+function editReview(reviewKey) {
+    const reviewElement = document.querySelector(`[onclick="editReview('${reviewKey}')"]`).closest('.review-item');
+    reviewElement.querySelector('.review-title').style.display = 'none';
+    reviewElement.querySelector('.review-content').style.display = 'none';
+    reviewElement.querySelector('.edit-form').style.display = 'block';
+}
+
+function cancelEdit(reviewKey) {
+    const reviewElement = document.querySelector(`[onclick="editReview('${reviewKey}')"]`).closest('.review-item');
+    reviewElement.querySelector('.review-title').style.display = 'block';
+    reviewElement.querySelector('.review-content').style.display = 'block';
+    reviewElement.querySelector('.edit-form').style.display = 'none';
+}
+
+function saveEditedReview(reviewKey) {
+    const reviewElement = document.querySelector(`[onclick="editReview('${reviewKey}')"]`).closest('.review-item');
+    const newTitle = reviewElement.querySelector('.edit-title').value;
+    const newContent = reviewElement.querySelector('.edit-content').value;
+
+    if (newTitle.trim() === '' || newContent.trim() === '') {
+        alert('請輸入標題和內容');
+        return;
+    }
+
+    const updatedReview = {
+        title: newTitle,
+        content: newContent,
+        time: new Date().toLocaleString()
+    };
+
+    database.ref('movieReviews').child(reviewKey).update(updatedReview)
+    .then(() => {
+        renderReviews();
+    })
+    .catch(error => console.error("Error updating review: ", error));
 }
 
 function createFishElement(fishData) {
