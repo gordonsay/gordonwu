@@ -86,6 +86,9 @@
             top: 60px; /* 為固定導航欄留出空間 */
         }
     </style>
+    <!-- 在 <head> 部分添加 Firebase 腳本 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
@@ -171,6 +174,21 @@ function createCustomIcon(iconUrl) {
 // 初始選擇默認圖標
 selectedIcon = createCustomIcon(flagIcons[0].url);
 
+// Firebase 配置
+const firebaseConfig = {
+    apiKey: "AIzaSyAy3wt6h_7zLz946XmAZIFFJAFPCkWUCLk",
+    authDomain: "test-c338f.firebaseapp.com",
+    projectId: "test-c338f",
+    storageBucket: "test-c338f.appspot.com",
+    messagingSenderId: "117988025801",
+    appId: "1:117988025801:web:e95e3c918b8fb9c0e63418",
+    measurementId: "G-VYK0LHZ950"
+};
+
+// 初始化 Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 function initMap() {
     map = L.map('map').setView([23.97, 120.97], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -245,24 +263,26 @@ function submitReview() {
     }
 
     const review = {
-        id: Date.now(),
         locationName: locationInput,
         content,
         lat,
         lng,
         timestamp: Date.now(),
-        iconUrl: selectedIcon.options.iconUrl // 保存選擇的圖標 URL
+        iconUrl: selectedIcon.options.iconUrl
     };
-    reviews.unshift(review); // 使用unshift而不是push,將新評論添加到數組開頭
-    localStorage.setItem('eatReviews', JSON.stringify(reviews));
-    renderReviews();
-    document.getElementById('locationInput').value = '';
-    document.getElementById('reviewContent').value = '';
-    if (tempMarker) {
-        map.removeLayer(tempMarker);
-        tempMarker = null;
-    }
-    selectedLocation = null;
+
+    database.ref('eatReviews').push(review)
+        .then(() => {
+            renderReviews();
+            document.getElementById('locationInput').value = '';
+            document.getElementById('reviewContent').value = '';
+            if (tempMarker) {
+                map.removeLayer(tempMarker);
+                tempMarker = null;
+            }
+            selectedLocation = null;
+        })
+        .catch(error => console.error("Error adding review: ", error));
 }
 
 function renderReviews() {
@@ -271,46 +291,51 @@ function renderReviews() {
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
 
-    reviews.forEach(review => {
-        const reviewElement = document.createElement('div');
-        reviewElement.className = 'review-item';
-        reviewElement.innerHTML = `
-            <div class="review-header">
-                <img src="${review.iconUrl}" alt="Flag icon">
-                <h3>${review.locationName}</h3>
-            </div>
-            <p>${review.content}</p>
-            <small>${new Date(review.timestamp).toLocaleString()}</small>
-            <button onclick="deleteReview(${review.id})" class="btn btn-danger btn-sm">刪除</button>
-        `;
-        reviewElement.onclick = function(e) {
-            if (e.target.tagName !== 'BUTTON') {
-                map.setView([review.lat, review.lng], 15);
-                markers.find(m => m.getLatLng().lat === review.lat && m.getLatLng().lng === review.lng).openPopup();
-            }
-        };
-        reviewList.appendChild(reviewElement);
+    database.ref('eatReviews').once('value')
+        .then(snapshot => {
+            snapshot.forEach(childSnapshot => {
+                const review = childSnapshot.val();
+                const reviewElement = document.createElement('div');
+                reviewElement.className = 'review-item';
+                reviewElement.innerHTML = `
+                    <div class="review-header">
+                        <img src="${review.iconUrl}" alt="Flag icon">
+                        <h3>${review.locationName}</h3>
+                    </div>
+                    <p>${review.content}</p>
+                    <small>${new Date(review.timestamp).toLocaleString()}</small>
+                    <button onclick="deleteReview('${childSnapshot.key}')" class="btn btn-danger btn-sm">刪除</button>
+                `;
+                reviewElement.onclick = function(e) {
+                    if (e.target.tagName !== 'BUTTON') {
+                        map.setView([review.lat, review.lng], 15);
+                        markers.find(m => m.getLatLng().lat === review.lat && m.getLatLng().lng === review.lng).openPopup();
+                    }
+                };
+                reviewList.appendChild(reviewElement);
 
-        const marker = L.marker([review.lat, review.lng], {icon: createCustomIcon(review.iconUrl)}).addTo(map);
-        marker.bindPopup(`
-            <div class="review-header">
-                <img src="${review.iconUrl}" alt="Flag icon" style="width:36px;height:32px;margin-right:10px;">
-                <b>${review.locationName}</b>
-            </div>
-            <p>${review.content}</p>
-            <small>${new Date(review.timestamp).toLocaleString()}</small>
-        `);
-        markers.push(marker);
-    });
+                const marker = L.marker([review.lat, review.lng], {icon: createCustomIcon(review.iconUrl)}).addTo(map);
+                marker.bindPopup(`
+                    <div class="review-header">
+                        <img src="${review.iconUrl}" alt="Flag icon" style="width:36px;height:32px;margin-right:10px;">
+                        <b>${review.locationName}</b>
+                    </div>
+                    <p>${review.content}</p>
+                    <small>${new Date(review.timestamp).toLocaleString()}</small>
+                `);
+                markers.push(marker);
+            });
+        })
+        .catch(error => console.error("Error fetching reviews: ", error));
 }
 
 function deleteReview(id) {
-    reviews = reviews.filter(review => review.id !== id);
-    localStorage.setItem('eatReviews', JSON.stringify(reviews));
-    renderReviews();
+    database.ref('eatReviews').child(id).remove()
+        .then(() => renderReviews())
+        .catch(error => console.error("Error deleting review: ", error));
 }
 
-window.onload = initMap;
+document.addEventListener('DOMContentLoaded', initMap);
 </script>
 </body>
 </html>
