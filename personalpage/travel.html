@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="../icon/favicon-16x16.png">
     <link rel="manifest" href="../icon/site.webmanifest">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css">
+
     <style>
         body {
             background-color: rgba(0, 105, 148, 0.7); /* 海洋藍色，透明度為 0.7 */
@@ -306,10 +306,6 @@ function initMap() {
     }
 }
 
-function updateLocationInfo(latlng) {
-    const locationInput = document.getElementById('locationInput');
-    locationInput.value = `緯度: ${latlng.lat.toFixed(6)}, 經度: ${latlng.lng.toFixed(6)}`;
-}
 
 function submitReview() {
     const locationName = document.getElementById('locationInput').value;
@@ -397,7 +393,7 @@ function deleteReview(id) {
         .catch(error => console.error("Error deleting review: ", error));
 }
 
-// 上傳圖片到 Firebase Storage 並添加到 flagIcons
+// 上傳圖��到 Firebase Storage 並���加到 flagIcons
 function uploadFlagToFirebase(file, dataUrl) {
     const storageRef = storage.ref('flags/' + file.name);
     storageRef.put(file).then((snapshot) => {
