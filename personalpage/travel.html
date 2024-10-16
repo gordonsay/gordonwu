@@ -24,7 +24,7 @@
         #map {
             height: 400px;
             width: 100%;
-            margin-bottom: 0; /* 移除底部邊距 */
+            margin-bottom: 20px;
             z-index: 1; /* 確保地圖在導航欄下方 */
         }
         #locationInput {
@@ -52,7 +52,7 @@
             z-index: 1000; /* 確保導航欄在最上層 */
         }
         #flagSelection {
-            height: 400px; /* 保持原有的高度 */
+            height: 400px;
             overflow-y: auto;
         }
         .flag-list-header {
@@ -130,21 +130,12 @@
             }
 
             #flagSelection {
-                height: auto; /* 改為自動高度 */
-                max-height: 200px; /* 設置最大高度 */
-                margin-bottom: 20px; /* 增加底部邊距 */
+                height: 200px;
+                margin-bottom: 20px;
             }
 
             .content-wrapper {
                 padding-top: 70px;
-            }
-
-            .row {
-                flex-direction: column;
-            }
-
-            .col-md-3 {
-                order: -1; /* 將 flagSelection 移到地圖上方 */
             }
 
             #locationInfo {
@@ -154,6 +145,12 @@
 
             #hashtagContainer {
                 width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .hashtag-btn {
+                margin-right: 5px;
+                margin-bottom: 5px;
             }
         }
         .hashtag-btn {
