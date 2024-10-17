@@ -4,7 +4,7 @@ body, html {
 }
 
 .hero-section {
-    background: url('bg3.png') no-repeat center center;
+    background: url('bg4.png') no-repeat center center;
     background-size: cover;
     height: 100vh;
     display: flex;
