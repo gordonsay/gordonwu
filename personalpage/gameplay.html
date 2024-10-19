@@ -21,7 +21,7 @@
         }
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
         .game-container {
@@ -33,6 +33,9 @@
             align-items: center;
             justify-content: center;
             min-height: 400px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
         }
         .game-title {
             font-size: 1.5rem;
@@ -63,9 +66,16 @@
         }
         .game-container canvas {
             border: 2px solid white;
+            max-width: 100%;
+            height: auto;
         }
         .navbar {
             background-color: rgba(0, 0, 0, 0.7);
+        }
+        @media (max-width: 768px) {
+            .game-container {
+                min-height: 300px;
+            }
         }
     </style>
 </head>
@@ -137,19 +147,19 @@
             <!-- 2048 Game -->
             <div class="game-container">
                 <h2 class="game-title">2048 Game</h2>
-                <canvas id="2048Canvas" width="400" height="400"></canvas>
+                <canvas id="2048Canvas" width="300" height="300"></canvas>
                 <button id="start2048Button" onclick="startGame('2048')" class="btn btn-primary mt-2">Start Game</button>
             </div>
             <!-- Snake Game -->
             <div class="game-container">
                 <h2 class="game-title">Snake Game</h2>
-                <canvas id="snakeCanvas" width="400" height="400"></canvas>
+                <canvas id="snakeCanvas" width="300" height="300"></canvas>
                 <button onclick="startGame('snake')" class="btn btn-primary mt-2">Start Game</button>
             </div>
             <!-- Tetris Game -->
             <div class="game-container">
                 <h2 class="game-title">Tetris</h2>
-                <canvas id="tetrisCanvas" width="300" height="600"></canvas>
+                <canvas id="tetrisCanvas" width="240" height="400"></canvas>
                 <button id="startTetrisButton" onclick="startGame('tetris')" class="btn btn-primary mt-2">Start Game</button>
             </div>
         </div>
@@ -177,7 +187,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// 公共遊戲邏輯和事件監聽器
+// 公共遊戲邏輯和事件監���器
 let activeGame = null;
 let gameStates = {
     'guessNumber': false,
@@ -371,9 +381,9 @@ function startTetrisGame() {
 
 // 貪吃蛇遊戲邏輯
 let snake, food, snakeDirection, snakeInterval;
-const SNAKE_BLOCK_SIZE = 20;
-const SNAKE_CANVAS_WIDTH = 400;
-const SNAKE_CANVAS_HEIGHT = 400;
+const SNAKE_BLOCK_SIZE = 15;
+const SNAKE_CANVAS_WIDTH = 300;
+const SNAKE_CANVAS_HEIGHT = 300;
 
 function getRandomFood() {
     return {
@@ -456,20 +466,19 @@ function addNewTile() {
 function draw2048Board() {
     const canvas = document.getElementById('2048Canvas');
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
     const tileSize = canvas.width / GRID_SIZE;
-    
-    for (let i = 0; i < GRID_SIZE; i++) {
-        for (let j = 0; j < GRID_SIZE; j++) {
-            ctx.fillStyle = getTileColor(board2048[i][j]);
-            ctx.fillRect(j * tileSize, i * tileSize, tileSize - 2, tileSize - 2);
-            
-            if (board2048[i][j] !== 0) {
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let row = 0; row < GRID_SIZE; row++) {
+        for (let col = 0; col < GRID_SIZE; col++) {
+            const value = board2048[row][col];
+            ctx.fillStyle = getTileColor(value);
+            ctx.fillRect(col * tileSize, row * tileSize, tileSize - 2, tileSize - 2);
+            if (value !== 0) {
                 ctx.fillStyle = '#776e65';
-                ctx.font = '30px Arial';
+                ctx.font = `${tileSize / 3}px Arial`;
                 ctx.textAlign = 'center';
-                ctx.fillText(board2048[i][j], (j + 0.5) * tileSize, (i + 0.6) * tileSize);
+                ctx.fillText(value, (col + 0.5) * tileSize, (row + 0.6) * tileSize);
             }
         }
     }
@@ -634,9 +643,14 @@ function isGameOver() {
 
 // 俄羅斯方塊遊戲邏輯
 let tetrisBoard, currentPiece, nextPiece, tetrisInterval, currentX, currentY;
+const TETRIS_BLOCK_SIZE = 20;
+const BOARD_WIDTH = 12;
+const BOARD_HEIGHT = 20;
 
 function startTetrisGame() {
     const canvas = document.getElementById('tetrisCanvas');
+    canvas.width = BOARD_WIDTH * TETRIS_BLOCK_SIZE;
+    canvas.height = BOARD_HEIGHT * TETRIS_BLOCK_SIZE;
     canvas.focus();
     tetrisBoard = Array(BOARD_HEIGHT).fill().map(() => Array(BOARD_WIDTH).fill(0));
     currentPiece = getRandomPiece();
@@ -672,7 +686,7 @@ function drawTetrisBoard(ctx) {
         for (let x = 0; x < BOARD_WIDTH; x++) {
             if (tetrisBoard[y][x]) {
                 ctx.fillStyle = 'blue';
-                ctx.fillRect(x * 30, y * 30, 29, 29);
+                ctx.fillRect(x * TETRIS_BLOCK_SIZE, y * TETRIS_BLOCK_SIZE, TETRIS_BLOCK_SIZE - 1, TETRIS_BLOCK_SIZE - 1);
             }
         }
     }
@@ -682,7 +696,7 @@ function drawTetrisBoard(ctx) {
     for (let y = 0; y < currentPiece.length; y++) {
         for (let x = 0; x < currentPiece[y].length; x++) {
             if (currentPiece[y][x]) {
-                ctx.fillRect((x + currentX) * 30, (y + currentY) * 30, 29, 29);
+                ctx.fillRect((x + currentX) * TETRIS_BLOCK_SIZE, (y + currentY) * TETRIS_BLOCK_SIZE, TETRIS_BLOCK_SIZE - 1, TETRIS_BLOCK_SIZE - 1);
             }
         }
     }
@@ -846,10 +860,6 @@ function playRPS(playerChoice) {
     
     document.getElementById('rpsResult').textContent = `You chose ${playerChoice}, computer chose ${computerChoice}. ${result}`;
 }
-
-// 定義 BOARD_HEIGHT 和 BOARD_WIDTH
-const BOARD_HEIGHT = 20;
-const BOARD_WIDTH = 10;
 </script>
 </body>
 </html>
