@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GJ | 遊戲</title>
+    <title>GJ | Game</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style_personal.css">
     <link rel="apple-touch-icon" sizes="180x180" href="../icon/apple-touch-icon.png">
@@ -77,6 +77,16 @@
                 min-height: 300px;
             }
         }
+        .virtual-keyboard {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .virtual-keyboard button {
+            margin: 0 5px;
+            padding: 10px;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
@@ -123,6 +133,8 @@
                 <input type="number" id="guessNumberInput" class="form-control mb-2" min="1" max="100">
                 <button onclick="guessNumber()" class="btn btn-primary">Guess!</button>
                 <p id="guessResult" class="text-white mt-2"></p>
+                <input type="text" id="guessNumberId" placeholder="Enter your ID" class="form-control mt-2">
+                <button onclick="startGame('guessNumber')" class="btn btn-primary mt-2">Start Game</button>
             </div>
             <!-- Click Speed Game -->
             <div class="game-container">
@@ -131,6 +143,7 @@
                 <button id="clickButton" class="btn btn-primary" onclick="clickSpeedGame()">Click me!</button>
                 <p id="clickCounter" class="text-white mt-2">0</p>
                 <p id="timerDisplay" class="text-white">10</p>
+                <input type="text" id="clickSpeedId" placeholder="Enter your ID" class="form-control mt-2">
                 <button id="startClickSpeedButton" onclick="startGame('clickSpeed')" class="btn btn-primary mt-2">Start Game</button>
             </div>
             <!-- Rock Paper Scissors Game -->
@@ -143,29 +156,72 @@
                     <button class="btn btn-light" onclick="playRPS('Paper')">Paper</button>
                 </div>
                 <p id="rpsResult" class="text-white mt-3"></p>
+                <input type="text" id="rpsId" placeholder="Enter your ID" class="form-control mt-2">
             </div>
             <!-- 2048 Game -->
             <div class="game-container">
                 <h2 class="game-title">2048 Game</h2>
                 <canvas id="2048Canvas" width="300" height="300"></canvas>
+                <div class="virtual-keyboard">
+                    <button onclick="handle2048KeyPress({key:'ArrowUp'})">↑</button>
+                    <button onclick="handle2048KeyPress({key:'ArrowLeft'})">←</button>
+                    <button onclick="handle2048KeyPress({key:'ArrowDown'})">↓</button>
+                    <button onclick="handle2048KeyPress({key:'ArrowRight'})">→</button>
+                </div>
+                <input type="text" id="2048Id" placeholder="Enter your ID" class="form-control mt-2">
                 <button id="start2048Button" onclick="startGame('2048')" class="btn btn-primary mt-2">Start Game</button>
             </div>
             <!-- Snake Game -->
             <div class="game-container">
                 <h2 class="game-title">Snake Game</h2>
                 <canvas id="snakeCanvas" width="300" height="300"></canvas>
+                <div class="virtual-keyboard">
+                    <button onclick="handleSnakeKeyPress({key:'ArrowUp'})">↑</button>
+                    <button onclick="handleSnakeKeyPress({key:'ArrowLeft'})">←</button>
+                    <button onclick="handleSnakeKeyPress({key:'ArrowDown'})">↓</button>
+                    <button onclick="handleSnakeKeyPress({key:'ArrowRight'})">→</button>
+                </div>
+                <input type="text" id="snakeId" placeholder="Enter your ID" class="form-control mt-2">
                 <button onclick="startGame('snake')" class="btn btn-primary mt-2">Start Game</button>
             </div>
             <!-- Tetris Game -->
             <div class="game-container">
                 <h2 class="game-title">Tetris</h2>
                 <canvas id="tetrisCanvas" width="240" height="400"></canvas>
+                <div class="virtual-keyboard">
+                    <button onclick="handleTetrisKeyPress({key:'ArrowUp'})">Rotate</button>
+                    <button onclick="handleTetrisKeyPress({key:'ArrowLeft'})">←</button>
+                    <button onclick="handleTetrisKeyPress({key:'ArrowDown'})">↓</button>
+                    <button onclick="handleTetrisKeyPress({key:'ArrowRight'})">→</button>
+                </div>
+                <input type="text" id="tetrisId" placeholder="Enter your ID" class="form-control mt-2">
                 <button id="startTetrisButton" onclick="startGame('tetris')" class="btn btn-primary mt-2">Start Game</button>
+            </div>
+            <!-- 新增的口袋妖怪遊戲容器 -->
+            <div class="game-container">
+                <h2 class="game-title">口袋妖怪</h2>
+                <iframe src="https://www.retrogames.cc/embed/18569-pocket-monsters-pikachu-japan.html" width="300" height="280" frameborder="no" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" scrolling="no"></iframe>
             </div>
         </div>
         <!-- Add this new div for displaying scores -->
         <div id="scoresContainer" class="mt-4 text-white"></div>
     </div>
+</div>
+
+<div class="container mt-5">
+    <h2 class="text-center text-white">Score Table</h2>
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th>Game</th>
+                <th>ID</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody id="scoreTableBody">
+            <!-- 分數將通過 JavaScript 動態添加 -->
+        </tbody>
+    </table>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -187,7 +243,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// 公共遊戲邏輯和事件監���器
+// 公共遊戲邏輯和事件監聽器
 let activeGame = null;
 let gameStates = {
     'guessNumber': false,
@@ -271,16 +327,80 @@ function startGame(gameName) {
     }
 }
 
-// 確保 startSnakeGame 函數被正確定義
+// 貪吃蛇遊戲邏輯
+let snake, food, snakeDirection, snakeInterval;
+const SNAKE_BLOCK_SIZE = 15;
+const SNAKE_CANVAS_WIDTH = 300;
+const SNAKE_CANVAS_HEIGHT = 300;
+
 function startSnakeGame() {
-    activeGame = 'snake';
     const canvas = document.getElementById('snakeCanvas');
+    canvas.width = SNAKE_CANVAS_WIDTH;
+    canvas.height = SNAKE_CANVAS_HEIGHT;
     canvas.focus();
-    snake = [{x: 200, y: 200}];
+    snake = [{x: 150, y: 150}];
     food = getRandomFood();
     snakeDirection = 'RIGHT';
     clearInterval(snakeInterval);
-    snakeInterval = setInterval(() => updateSnakeGame(), 100);
+    snakeInterval = setInterval(updateSnakeGame, 100);
+}
+
+function getRandomFood() {
+    return {
+        x: Math.floor(Math.random() * (SNAKE_CANVAS_WIDTH / SNAKE_BLOCK_SIZE)) * SNAKE_BLOCK_SIZE,
+        y: Math.floor(Math.random() * (SNAKE_CANVAS_HEIGHT / SNAKE_BLOCK_SIZE)) * SNAKE_BLOCK_SIZE
+    };
+}
+
+function updateSnakeGame() {
+    const canvas = document.getElementById('snakeCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 移動蛇
+    const head = {...snake[0]};
+    switch(snakeDirection) {
+        case 'RIGHT': head.x += SNAKE_BLOCK_SIZE; break;
+        case 'LEFT': head.x -= SNAKE_BLOCK_SIZE; break;
+        case 'UP': head.y -= SNAKE_BLOCK_SIZE; break;
+        case 'DOWN': head.y += SNAKE_BLOCK_SIZE; break;
+    }
+    
+    // 檢查碰撞
+    if (head.x < 0 || head.x >= SNAKE_CANVAS_WIDTH || head.y < 0 || head.y >= SNAKE_CANVAS_HEIGHT || 
+        snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        clearInterval(snakeInterval);
+        alert('Game Over! Your score: ' + (snake.length - 1));
+        saveScore('snake', snake.length - 1);
+        endGame('snake');
+        return;
+    }
+    
+    snake.unshift(head);
+    
+    // 檢查是否吃到食物
+    if (head.x === food.x && head.y === food.y) {
+        food = getRandomFood();
+    } else {
+        snake.pop();
+    }
+    
+    // 繪製蛇和食物
+    ctx.fillStyle = 'green';
+    snake.forEach(segment => ctx.fillRect(segment.x, segment.y, SNAKE_BLOCK_SIZE - 1, SNAKE_BLOCK_SIZE - 1));
+    ctx.fillStyle = 'red';
+    ctx.fillRect(food.x, food.y, SNAKE_BLOCK_SIZE - 1, SNAKE_BLOCK_SIZE - 1);
+}
+
+function handleSnakeKeyPress(e) {
+    if (activeGame !== 'snake') return;
+    
+    switch(e.key) {
+        case 'ArrowUp': if (snakeDirection !== 'DOWN') snakeDirection = 'UP'; break;
+        case 'ArrowDown': if (snakeDirection !== 'UP') snakeDirection = 'DOWN'; break;
+        case 'ArrowLeft': if (snakeDirection !== 'RIGHT') snakeDirection = 'LEFT'; break;
+        case 'ArrowRight': if (snakeDirection !== 'LEFT') snakeDirection = 'RIGHT'; break;
+    }
 }
 
 // 修改 endGame 函數
@@ -347,12 +467,93 @@ function startClickSpeedGame() {
     }, 1000);
 }
 
+// 在全局範圍內添加一個變量來跟踪最高分數
+let highestScore2048 = 0;
+
+// 修改 start2048Game 函數
 function start2048Game() {
     board2048 = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+    highestScore2048 = 0; // 重置最高分數
     addNewTile();
     addNewTile();
     draw2048Board();
 }
+
+// 修改 handle2048KeyPress 函數
+function handle2048KeyPress(e) {
+    if (activeGame !== '2048') return;
+    
+    let moved = false;
+    switch(e.key) {
+        case 'ArrowUp':
+            moved = moveUp();
+            break;
+        case 'ArrowDown':
+            moved = moveDown();
+            break;
+        case 'ArrowLeft':
+            moved = moveLeft();
+            break;
+        case 'ArrowRight':
+            moved = moveRight();
+            break;
+    }
+    
+    if (moved) {
+        addNewTile();
+        updateHighestScore();
+        draw2048Board();
+        if (isGameOver()) {
+            alert('遊戲結束！您的最高分數是：' + highestScore2048);
+            saveScore('2048', highestScore2048);
+            endGame('2048');
+        }
+    }
+}
+
+// 添加 updateHighestScore 函數
+function updateHighestScore() {
+    for (let row = 0; row < GRID_SIZE; row++) {
+        for (let col = 0; col < GRID_SIZE; col++) {
+            if (board2048[row][col] > highestScore2048) {
+                highestScore2048 = board2048[row][col];
+            }
+        }
+    }
+}
+
+// 修改移動函數（moveUp, moveDown, moveLeft, moveRight）
+// 這裡以 moveUp 為例，其他函數也需要類似修改
+function moveUp() {
+    let moved = false;
+    for (let col = 0; col < GRID_SIZE; col++) {
+        for (let row = 1; row < GRID_SIZE; row++) {
+            if (board2048[row][col] !== 0) {
+                let currentRow = row;
+                while (currentRow > 0 && (board2048[currentRow - 1][col] === 0 || board2048[currentRow - 1][col] === board2048[currentRow][col])) {
+                    if (board2048[currentRow - 1][col] === 0) {
+                        board2048[currentRow - 1][col] = board2048[currentRow][col];
+                        board2048[currentRow][col] = 0;
+                        currentRow--;
+                        moved = true;
+                    } else if (board2048[currentRow - 1][col] === board2048[currentRow][col]) {
+                        board2048[currentRow - 1][col] *= 2;
+                        board2048[currentRow][col] = 0;
+                        moved = true;
+                        // 更新最高分數
+                        if (board2048[currentRow - 1][col] > highestScore2048) {
+                            highestScore2048 = board2048[currentRow - 1][col];
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return moved;
+}
+
+// 其他移動函數（moveDown, moveLeft, moveRight）也需要類似的修改
 
 function startTetrisGame() {
     const canvas = document.getElementById('tetrisCanvas');
@@ -378,64 +579,6 @@ function startTetrisGame() {
 // <button id="startTetrisButton" onclick="startGame('tetris')" class="btn btn-primary mt-2">開始遊戲</button>
 
 // 其他遊戲邏輯保持不變
-
-// 貪吃蛇遊戲邏輯
-let snake, food, snakeDirection, snakeInterval;
-const SNAKE_BLOCK_SIZE = 15;
-const SNAKE_CANVAS_WIDTH = 300;
-const SNAKE_CANVAS_HEIGHT = 300;
-
-function getRandomFood() {
-    return {
-        x: Math.floor(Math.random() * (SNAKE_CANVAS_WIDTH / SNAKE_BLOCK_SIZE)) * SNAKE_BLOCK_SIZE,
-        y: Math.floor(Math.random() * (SNAKE_CANVAS_HEIGHT / SNAKE_BLOCK_SIZE)) * SNAKE_BLOCK_SIZE
-    };
-}
-
-function updateSnakeGame() {
-    const canvas = document.getElementById('snakeCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // 移動蛇
-    const head = {...snake[0]};
-    if (snakeDirection === 'RIGHT') head.x += SNAKE_BLOCK_SIZE;
-    if (snakeDirection === 'LEFT') head.x -= SNAKE_BLOCK_SIZE;
-    if (snakeDirection === 'UP') head.y -= SNAKE_BLOCK_SIZE;
-    if (snakeDirection === 'DOWN') head.y += SNAKE_BLOCK_SIZE;
-    
-    // 檢查碰撞
-    if (head.x < 0 || head.x >= SNAKE_CANVAS_WIDTH || head.y < 0 || head.y >= SNAKE_CANVAS_HEIGHT || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
-        clearInterval(snakeInterval);
-        alert('Game Over!');
-        endGame('snake');
-        return;
-    }
-    
-    snake.unshift(head);
-    
-    // 檢查是否吃到食物
-    if (head.x === food.x && head.y === food.y) {
-        food = getRandomFood();
-    } else {
-        snake.pop();
-    }
-    
-    // 繪製蛇和食物
-    ctx.fillStyle = 'green';
-    snake.forEach(segment => ctx.fillRect(segment.x, segment.y, SNAKE_BLOCK_SIZE - 1, SNAKE_BLOCK_SIZE - 1));
-    ctx.fillStyle = 'red';
-    ctx.fillRect(food.x, food.y, SNAKE_BLOCK_SIZE - 1, SNAKE_BLOCK_SIZE - 1);
-}
-
-function handleSnakeKeyPress(e) {
-    if (activeGame !== 'snake') return;
-    
-    if (e.key === 'ArrowUp' && snakeDirection !== 'DOWN') snakeDirection = 'UP';
-    if (e.key === 'ArrowDown' && snakeDirection !== 'UP') snakeDirection = 'DOWN';
-    if (e.key === 'ArrowLeft' && snakeDirection !== 'RIGHT') snakeDirection = 'LEFT';
-    if (e.key === 'ArrowRight' && snakeDirection !== 'LEFT') snakeDirection = 'RIGHT';
-}
 
 // 2048遊戲邏輯
 const GRID_SIZE = 4;
@@ -631,13 +774,21 @@ function moveRight() {
 }
 
 function isGameOver() {
+    // 檢查是否還有空格
     for (let i = 0; i < GRID_SIZE; i++) {
         for (let j = 0; j < GRID_SIZE; j++) {
             if (board2048[i][j] === 0) return false;
+        }
+    }
+    
+    // 檢查是否還有可以合併的相方塊
+    for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
             if (i < GRID_SIZE - 1 && board2048[i][j] === board2048[i + 1][j]) return false;
             if (j < GRID_SIZE - 1 && board2048[i][j] === board2048[i][j + 1]) return false;
         }
     }
+    
     return true;
 }
 
@@ -705,6 +856,18 @@ function drawTetrisBoard(ctx) {
 function updateTetrisGame(ctx) {
     if (!canMovePieceDown()) {
         placePiece();
+        if (isGameOverTetris()) {
+            clearInterval(tetrisInterval);
+            const score = calculateTetrisScore();
+            alert('遊戲結束！您的分數是：' + score);
+            saveScore('tetris', score);
+            endGame('tetris');
+            return;
+        }
+        currentPiece = nextPiece;
+        nextPiece = getRandomPiece();
+        currentX = Math.floor(BOARD_WIDTH / 2) - Math.floor(currentPiece[0].length / 2);
+        currentY = 0;
     } else {
         currentY++;
     }
@@ -822,6 +985,22 @@ function clearLines() {
     }
 }
 
+function isGameOverTetris() {
+    return !canMovePieceDown() && currentY === 0;
+}
+
+function calculateTetrisScore() {
+    let score = 0;
+    for (let y = 0; y < BOARD_HEIGHT; y++) {
+        for (let x = 0; x < BOARD_WIDTH; x++) {
+            if (tetrisBoard[y][x]) {
+                score++;
+            }
+        }
+    }
+    return score;
+}
+
 // 添加 guessNumber 函數
 let targetNumber, guessCount;
 
@@ -860,6 +1039,47 @@ function playRPS(playerChoice) {
     
     document.getElementById('rpsResult').textContent = `You chose ${playerChoice}, computer chose ${computerChoice}. ${result}`;
 }
+
+// 修改 saveScore 函數
+function saveScore(game, score) {
+    let id = document.getElementById(`${game}Id`).value.trim();
+    if (!id) {
+        id = 'noname';
+    }
+    const scoreRef = database.ref('scores').push();
+    scoreRef.set({
+        game: game,
+        id: id,
+        score: score
+    });
+    updateScoreTable();
+}
+
+// 添加 updateScoreTable 函數
+function updateScoreTable() {
+    const scoresRef = database.ref('scores');
+    scoresRef.orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+        const scores = [];
+        snapshot.forEach((childSnapshot) => {
+            scores.push(childSnapshot.val());
+        });
+        scores.reverse();
+        
+        const tableBody = document.getElementById('scoreTableBody');
+        tableBody.innerHTML = '';
+        scores.forEach((score) => {
+            const row = tableBody.insertRow();
+            row.insertCell(0).textContent = score.game;
+            row.insertCell(1).textContent = score.id;
+            row.insertCell(2).textContent = score.score;
+        });
+    });
+}
+
+// 在頁面加載時調用 updateScoreTable
+window.onload = function() {
+    updateScoreTable();
+};
 </script>
 </body>
 </html>
