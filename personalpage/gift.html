@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Photo Blind Vote</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: rgba(255, 255, 255, .08);
+            --muted: #cbd5e1;
+        }
+
+        html,
+        body {
+            background: linear-gradient(180deg, rgba(0, 105, 148, .78), rgba(0, 105, 148, .58));
+            min-height: 100%;
+        }
+
+        .content {
+            background: rgba(0, 0, 0, .55);
+            min-height: 100vh;
+            padding: 64px 12px 28px;
+        }
+
+        .section {
+            background: var(--panel);
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        h1,
+        h2,
+        h5,
+        .text-white {
+            color: #fff;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media(min-width:992px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .card-photo {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .ph-img {
+            width: 100%;
+            height: 48vw;
+            max-height: 300px;
+            object-fit: cover;
+            background: #0b1023;
+        }
+
+        .btn-vote {
+            border-radius: 0;
+            padding: 14px;
+            font-weight: 600;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #0b1023 25%, #111827 37%, #0b1023 63%);
+            background-size: 400% 100%;
+            animation: s 1.2s ease infinite;
+        }
+
+        @keyframes s {
+            0% {
+                background-position: 100% 50%
+            }
+
+            100% {
+                background-position: 0 50%
+            }
+        }
+
+        .bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .bar .label {
+            width: 160px;
+            color: #a3e635;
+            font-size: 14px;
+        }
+
+        .bar .track {
+            flex: 1;
+            height: 12px;
+            background: #0b1023;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid #1f2937;
+        }
+
+        .bar .fill {
+            height: 100%;
+            width: 0%;
+            background: #22d3ee;
+            transition: width .35s ease;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        .sticky-cta {
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
+            background: rgba(0, 0, 0, .6);
+            backdrop-filter: blur(6px);
+            padding-top: 8px;
+        }
+
+        .badge-soft {
+            background: rgba(34, 211, 238, .14);
+            color: #67e8f9;
+            border: 1px solid rgba(103, 232, 249, .35);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, .65);
+        }
+
+        dialog {
+            border: none;
+            border-radius: 12px;
+            padding: 0;
+            max-width: min(96vw, 780px);
+        }
+
+        .lb-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .error-img {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 48vw;
+            max-height: 300px;
+            background: #1f2937;
+            color: #f87171;
+            font-size: 12px;
+            text-align: center;
+            padding: 8px;
+        }
+
+        /* navbar from note */
+        .navbar {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-lg-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="index_personal.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="eat.html">Eat</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="travel.html">Travel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="box.html">Video</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="gameplay.html">Game</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="note.html">Note</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white active" aria-current="page" href="#">Gift</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="content container">
+        <!-- (1) Header & Start -->
+        <div class="section">
+            <h1 class="h4 mb-2">Photo Blind Vote</h1>
+            <div class="muted mb-2">
+                Rules: Each round shows <b>3 photos from different photographers</b>, for 5 rounds total.
+                Photographer info stays hidden during voting and is revealed in the results with contact details.
+            </div>
+            <div class="row g-2 align-items-end">
+                <div class="col-7">
+                    <label class="form-label text-white mb-1">Your name</label>
+                    <input id="username" type="text" class="form-control form-control-lg"
+                        placeholder="e.g., Anna / Gordon">
+                </div>
+                <div class="col-5 d-grid">
+                    <button id="startBtn" class="btn btn-primary btn-lg">Start</button>
+                </div>
+                <div class="col-12 d-flex align-items-center gap-2 mt-2">
+                    <span id="imageStatus" class="badge-soft">Checking data</span>
+                </div>
+            </div>
+            <div class="hint">Mobile-friendly. Tap to vote. Tap image to preview large.</div>
+        </div>
+
+        <!-- (2) History -->
+        <div id="historyPanel" class="section" hidden>
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="h6 text-white mb-0">Your voting history</h2>
+                <span id="historyMeta" class="muted"></span>
+            </div>
+            <div id="historyList" class="mt-2"></div>
+        </div>
+
+        <!-- (3) Voting -->
+        <div id="gamePanel" class="section" hidden>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div id="roundText" class="text-white fw-semibold"></div>
+                <div id="leftCounter" class="muted"></div>
+            </div>
+            <div id="grid" class="grid" aria-live="polite"></div>
+            <div class="sticky-cta">
+                <button id="skipBtn" class="btn btn-outline-light w-100">Skip this round (no vote)</button>
+            </div>
+        </div>
+
+        <!-- (4) Results -->
+        <div id="statsPanel" class="section" hidden>
+            <!-- After voting, aggregated results across all users are shown -->
+            <h2 class="h6 text-white">Result</h2>
+            <div id="bars" class="mt-2"></div>
+            <hr class="border-secondary" />
+            <h3 class="h6 text-white">Photographers</h3>
+            <div id="profiles" class="mt-2"></div>
+            <div class="muted mt-2">Tip: before booking, confirm availability, licensing, and editing turnaround.</div>
+        </div>
+    </div>
+
+    <!-- Minimal Lightbox -->
+    <dialog id="lightbox">
+        <img id="lbImg" class="lb-img" alt="preview">
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+    <script>
+        /* === DEBUG ?}???P?u?? === */
+        const DEBUG = true; // ?@??????
+        const log = (...a) => DEBUG && console.log('[gift]', ...a);
+        const warn = (...a) => DEBUG && console.warn('[gift:warn]', ...a);
+        const err = (...a) => DEBUG && console.error('[gift:err]', ...a);
+
+        window.addEventListener('error', (e) => err('window error', e.message, e.error || e));
+        window.addEventListener('unhandledrejection', (e) => err('unhandledrejection', e.reason));
+
+        /* ===== 1) Firebase ===== */
+        const firebaseConfig = {
+            apiKey: "AIzaSyAy3wt6h_7zLz946XmAZIFFJAFPCkWUCLk",
+            authDomain: "test-c338f.firebaseapp.com",
+            databaseURL: "https://test-c338f-default-rtdb.firebaseio.com/",
+            projectId: "test-c338f",
+            storageBucket: "test-c338f.appspot.com",
+            messagingSenderId: "117988025801",
+            appId: "1:117988025801:web:e95e3c918b8fb9c0e63418",
+            measurementId: "G-VYK0LHZ950"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const storage = firebase.storage();
+
+        async function resolveImageUrl(url) {
+            if (!url) { warn('resolveImageUrl got empty url'); return url; }
+            try {
+                if (url.startsWith('gs://')) {
+                    const out = await storage.refFromURL(url).getDownloadURL();
+                    log('RESOLVE gs:// ?-> https', { in: url, out });
+                    return out;
+                }
+                if (url.startsWith('https://firebasestorage.googleapis.com')) {
+                    log('RESOLVE already https storage', url);
+                    return url;
+                }
+                const out = toDisplayableUrl(url);
+                if (out !== url) log('RESOLVE github blob ?-> raw', { in: url, out });
+                return out;
+            } catch (e) {
+                err('resolveImageUrl failed', url, e);
+                throw e;
+            }
+        }
+
+        /* ===== 2) DOM refs ===== */
+        const usernameEl = document.getElementById('username');
+        const startBtn = document.getElementById('startBtn');
+        const imageStatus = document.getElementById('imageStatus');
+
+        const historyPanel = document.getElementById('historyPanel');
+        const historyList = document.getElementById('historyList');
+        const historyMeta = document.getElementById('historyMeta');
+
+        const gamePanel = document.getElementById('gamePanel');
+        const roundText = document.getElementById('roundText');
+        const leftCounter = document.getElementById('leftCounter');
+        const grid = document.getElementById('grid');
+        const skipBtn = document.getElementById('skipBtn');
+
+        const statsPanel = document.getElementById('statsPanel');
+        const bars = document.getElementById('bars');
+        const profiles = document.getElementById('profiles');
+
+        const lightbox = document.getElementById('lightbox');
+        const lbImg = document.getElementById('lbImg');
+
+        /* ===== 3) Constants ===== */
+        const TOTAL_ROUNDS = 5;
+        const SOURCE_IDS = ['P1', 'P2', 'P3', 'P4', 'P5'];
+        let showMs = 0;
+
+        /* ===== 4) Helpers ===== */
+        const enc = s => encodeURIComponent(s || '');
+        const nowTs = () => Date.now();
+        const pad = n => String(n).padStart(2, '0');
+        const fmtTs = ms => { const d = new Date(ms); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+        function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+        // convert GitHub "blob" URL to raw if needed
+        function toDisplayableUrl(url) {
+            if (!url) return url;
+            if (url.includes('github.com') && url.includes('/blob/')) {
+                return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+            }
+            if (url.includes('github.com') && !url.includes('raw.githubusercontent.com') && !url.includes('?raw=1')) {
+                return url + '?raw=1';
+            }
+            return url;
+        }
+
+        function makeRounds(imagesBySource) {
+            log('makeRounds input:', imagesBySource);
+            const remaining = new Map(SOURCE_IDS.map(id => [id, imagesBySource[id]?.length || 0]));
+            const pools = new Map(SOURCE_IDS.map(id => [id, shuffle([...(imagesBySource[id] || [])])]));
+            const rounds = [];
+            for (let r = 0; r < TOTAL_ROUNDS; r++) {
+                const cands = Array.from(remaining.entries())
+                    .filter(([, c]) => c > 0)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 3)
+                    .map(([sid]) => sid);
+                const trio = [];
+                cands.forEach(sid => {
+                    const list = pools.get(sid);
+                    const card = list.pop();
+                    trio.push(card);
+                    remaining.set(sid, remaining.get(sid) - 1);
+                });
+                rounds.push(shuffle(trio));
+            }
+            log('makeRounds output:', rounds);
+            return rounds;
+        }
+
+        /* ===== 5) Data IO ===== */
+        async function readImages() {
+            log('readImages: fetching /images');
+            const snap = await db.ref('images').once('value');
+            const data = snap.val();
+            log('readImages: snapshot exists?', !!data, data ? Object.keys(data) : null);
+            if (!data) {
+                warn('readImages: /images not found, using samples');
+                return {
+                    P1: ['https://picsum.photos/seed/P1a/1200/800', 'https://picsum.photos/seed/P1b/1200/800', 'https://picsum.photos/seed/P1c/1200/800'],
+                    P2: ['https://picsum.photos/seed/P2a/1200/800', 'https://picsum.photos/seed/P2b/1200/800', 'https://picsum.photos/seed/P2c/1200/800'],
+                    P3: ['https://picsum.photos/seed/P3a/1200/800', 'https://picsum.photos/seed/P3b/1200/800', 'https://picsum.photos/seed/P3c/1200/800'],
+                    P4: ['https://picsum.photos/seed/P4a/1200/800', 'https://picsum.photos/seed/P4b/1200/800', 'https://picsum.photos/seed/P4c/1200/800'],
+                    P5: ['https://picsum.photos/seed/P5a/1200/800', 'https://picsum.photos/seed/P5b/1200/800', 'https://picsum.photos/seed/P5c/1200/800']
+                };
+            }
+            return data; // { P1:[url,url,url], ... }
+        }
+
+        async function readPhotographers() {
+            log('readPhotographers: fetching /photographers');
+            const snap = await db.ref('photographers').once('value');
+            const data = snap.val();
+            log('readPhotographers: snapshot exists?', !!data, data ? Object.keys(data) : null);
+            if (!data) {
+                warn('readPhotographers: /photographers not found, using samples');
+                return {
+                    P1: { name: 'Photographer 1', ig: '', line: '', phone: '', website: '', note: 'Sample notes' },
+                    P2: { name: 'Photographer 2', ig: '', line: '', phone: '', website: '', note: 'Sample notes' },
+                    P3: { name: 'Photographer 3', ig: '', line: '', phone: '', website: '', note: 'Sample notes' },
+                    P4: { name: 'Photographer 4', ig: '', line: '', phone: '', website: '', note: 'Sample notes' },
+                    P5: { name: 'Photographer 5', ig: '', line: '', phone: '', website: '', note: 'Sample notes' }
+                };
+            }
+            return data; // { P1:{name, ig, ...}, ... }
+        }
+
+        async function ensureStatus() {
+            try {
+                const imgs = await readImages();
+                if (!imgs) { imageStatus.textContent = 'No /images found.'; warn('ensureStatus: no images'); return; }
+                const counts = SOURCE_IDS.map(id => (imgs[id] ? imgs[id].length : 0));
+                const ok = counts.every(c => c >= 3);
+                imageStatus.textContent = ok
+                    ? `Images ready: ?3 per photographer. (${counts.join(',')})`
+                    : `Not enough images: ${SOURCE_IDS.map((id, i) => `${id}:${counts[i] || 0}`).join(' ')}`;
+                log('ensureStatus counts:', counts, 'ok?', ok);
+            } catch (e) {
+                err('ensureStatus failed', e);
+                imageStatus.textContent = 'Error checking images (see console).';
+            }
+        }
+
+        /* ===== 6) History ===== */
+        async function loadHistory(username) {
+            log('loadHistory for', username);
+            const ref = db.ref(`users/${enc(username)}/sessions`);
+            const snap = await ref.orderByChild('createdAt').once('value');
+            const arr = [];
+            snap.forEach(ch => arr.push({ id: ch.key, ...ch.val() }));
+            arr.reverse();
+            historyList.innerHTML = arr.length ? '' : '<div class="muted">No history yet.</div>';
+            arr.forEach(s => {
+                const totals = SOURCE_IDS.map(k => `${k}:${s.votes?.[k] || 0}`).join('  ');
+                const el = document.createElement('div');
+                el.className = 'text-white small';
+                el.textContent = `${fmtTs(s.createdAt)}${s.finishedAt ? ' (finished)' : ' (unfinished)'}  P Votes: ${totals}`;
+                historyList.appendChild(el);
+            });
+            historyMeta.textContent = `${arr.length} session(s)`;
+        }
+
+        /* ===== 7) Flow ===== */
+        let state = null;
+
+        startBtn.addEventListener('click', async () => {
+            const username = (usernameEl.value || '').trim();
+            log('start clicked. username=', username);
+            if (!username) { alert('Please enter your name.'); return; }
+
+            try {
+                const imgs = await readImages();
+                const pros = await readPhotographers();
+                log('data fetched', { imgs, pros });
+
+                if (!imgs || !pros) { alert('Missing /photographers and/or /images in database.'); return; }
+                for (const sid of SOURCE_IDS) {
+                    if (!imgs[sid] || imgs[sid].length < 3) {
+                        warn('missing images for', sid, imgs[sid]);
+                        alert(`Photographer ${sid} has fewer than 3 images.`); return;
+                    }
+                }
+
+                // History
+                historyPanel.hidden = false;
+                await loadHistory(username);
+
+                // Build rounds with normalized displayable URLs
+                const imagesBySource = {};
+                for (const sid of SOURCE_IDS) {
+                    const list = (imgs[sid] || []).slice(0, 3);
+                    log('resolving URLs for', sid, list);
+                    const resolved = await Promise.all(list.map(u => resolveImageUrl(u).catch(e => {
+                        err('resolve failed for', sid, u, e);
+                        return u; // ?~???y?{?A???Od???r??
+                    })));
+                    log('resolved URLs for', sid, resolved);
+                    imagesBySource[sid] = resolved.map((url, idx) => ({
+                        id: `${sid}${idx + 1}`,
+                        src: url,
+                        sourceId: sid
+                    }));
+                }
+                const rounds = makeRounds(imagesBySource);
+
+                // Create session
+                const createdAt = nowTs();
+                const sessionRef = await db.ref(`users/${enc(username)}/sessions`).push({
+                    createdAt,
+                    votes: { P1: 0, P2: 0, P3: 0, P4: 0, P5: 0 },
+                    roundsJson: JSON.stringify(rounds)
+                });
+                log('session created', sessionRef.key);
+
+                state = {
+                    username, sessionId: sessionRef.key,
+                    rounds, roundIndex: 0,
+                    votes: { P1: 0, P2: 0, P3: 0, P4: 0, P5: 0 },
+                    finished: false,
+                    photographers: pros
+                };
+                log('state init', state);
+
+                gamePanel.hidden = false;
+                statsPanel.hidden = true;
+                renderRound();
+            } catch (e) {
+                err('start flow failed', e);
+                alert('Start failed. See console for details.');
+            }
+        });
+
+        function renderRound() {
+            log('renderRound idx=', state.roundIndex, 'trio=', state.rounds[state.roundIndex]);
+            roundText.textContent = `Round ${state.roundIndex + 1} / ${TOTAL_ROUNDS}`;
+            leftCounter.textContent = `${TOTAL_ROUNDS - state.roundIndex} round(s) left`;
+            grid.innerHTML = '';
+            const trio = state.rounds[state.roundIndex];
+
+            trio.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card-photo';
+                cardEl.innerHTML = `
+          <div class="ph-img skeleton"></div>
+          <button class="btn btn-primary btn-vote">Choose this photo</button>
+        `;
+
+                const img = new Image();
+                img.loading = 'eager';
+                img.decoding = 'async';
+                img.src = card.src;
+                img.className = 'ph-img';
+                img.alt = 'photo';
+
+                img.addEventListener('load', () => {
+                    log('IMG load OK', card.src);
+                    const box = cardEl.querySelector('.ph-img.skeleton');
+                    if (box) box.replaceWith(img);
+                });
+                img.addEventListener('error', (e) => {
+                    err('IMG load FAIL', card.src, e);
+                    const box = cardEl.querySelector('.ph-img.skeleton');
+                    const er = document.createElement('div');
+                    er.className = 'error-img';
+                    er.textContent = `Image failed to load.\n${card.src}`;
+                    if (box) box.replaceWith(er);
+                });
+
+                // Tap to preview large
+                img.addEventListener('click', () => {
+                    log('lightbox open', card.src);
+                    lbImg.src = card.src;
+                    lightbox.showModal();
+                });
+
+                cardEl.querySelector('.btn-vote').addEventListener('click', () => vote(card.sourceId));
+                grid.appendChild(cardEl);
+            });
+
+            showMs = performance.now();
+        }
+
+        skipBtn.addEventListener('click', () => {
+            state.roundIndex++;
+            if (state.roundIndex >= TOTAL_ROUNDS) { finish(); }
+            else { renderRound(); }
+        });
+
+        async function vote(sourceId) {
+            log('vote', { round: state.roundIndex + 1, sourceId });
+            if (state.finished) return;
+            const rt = Math.round(performance.now() - showMs);
+
+            await db.ref(`users/${enc(state.username)}/sessions/${state.sessionId}/votesByRound`).push({
+                round: state.roundIndex + 1, sourceId, rt,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            });
+
+            state.votes[sourceId] = (state.votes[sourceId] || 0) + 1;
+            await db.ref(`users/${enc(state.username)}/sessions/${state.sessionId}/votes`).set(state.votes);
+
+            await db.ref(`global/tally/${sourceId}`).transaction(v => (v || 0) + 1);
+
+            state.roundIndex++;
+            if (state.roundIndex >= TOTAL_ROUNDS) { finish(); }
+            else { renderRound(); }
+        }
+
+        async function finish() {
+            log('finish');
+            state.finished = true;
+            // record the finish time for this session
+            await db.ref(`users/${enc(state.username)}/sessions/${state.sessionId}/finishedAt`)
+                .set(firebase.database.ServerValue.TIMESTAMP);
+            // hide game panel when the session is complete
+            gamePanel.hidden = true;
+            // fetch updated global tally so results include this vote
+            try {
+                const tallySnap = await db.ref('global/tally').once('value');
+                state.globalTally = tallySnap.val() || {};
+                log('loaded global tally', state.globalTally);
+            } catch (e) {
+                err('failed to load global tally', e);
+                state.globalTally = {};
+            }
+            // render aggregated stats and show the stats panel
+            await renderStats();
+            statsPanel.hidden = false;
+        }
+
+        async function renderStats() {
+            // use aggregated global tally stored on state to render results
+            const tally = state.globalTally || {};
+            log('renderStats tally', tally);
+            bars.innerHTML = '';
+            const totalVotes = SOURCE_IDS.reduce((sum, id) => sum + (tally[id] || 0), 0);
+            SOURCE_IDS.forEach(id => {
+                const v = tally[id] || 0;
+                const pct = totalVotes > 0 ? (v / totalVotes * 100) : 0;
+                const row = document.createElement('div');
+                row.className = 'bar';
+                const name = state.photographers?.[id]?.name || ('Photographer ' + id);
+                row.innerHTML = `
+          <div class="label">${name}</div>
+          <div class="track"><div class="fill" style="width:${pct}%;"></div></div>
+          <div class="text-white">${v} vote(s) (${pct.toFixed(1)}%)</div>
+        `;
+                bars.appendChild(row);
+            });
+
+            profiles.innerHTML = '';
+            SOURCE_IDS.forEach(id => {
+                const p = state.photographers?.[id] || {};
+                const card = document.createElement('div');
+                card.className = 'p-3 mb-2 rounded-3';
+                card.style.background = 'rgba(0,0,0,.35)';
+                card.innerHTML = `
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-white fw-semibold">${p.name || ('Photographer ' + id)}</div>
+              <div class="muted small">${p.note || ''}</div>
+              <div class="muted small mt-1">
+                ${p.ig ? `<a href="https://instagram.com/${p.ig.replace(/^@/, '')}" 
+                            target="_blank" rel="noopener">IG: ${p.ig}</a><span class="mx-1">|</span>` : ''}
+                ${p.website ? `<a href="${encodeURI(p.website)}" target="_blank" rel="noopener">Website</a><span class="mx-1">|</span>` : ''}
+                ${p.line ? `LINE: ${p.line}<span class="mx-1">|</span>` : ''}
+                ${p.phone ? `Phone: ${p.phone}` : ''}
+                </div>
+            </div>
+          </div>
+        `;
+                profiles.appendChild(card);
+            });
+        }
+
+        // Close lightbox on click
+        lightbox.addEventListener('click', () => lightbox.close());
+
+        // Initial data check
+        ensureStatus();
+    </script>
+</body>
+
+</html>
